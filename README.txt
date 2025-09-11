@@ -15,18 +15,27 @@ A comprehensive personal finance management application built with Python and tt
 ## Project Structure
 
 ```
-personal_finance_app/
-├── main.py                    # Application entry point
-├── database.py                # Database setup and operations
-├── finance_operations.py      # Finance data operations
-├── auth.py                    # Authentication GUI
-├── expense_pages.py           # Expense management GUI
-├── income_pages.py            # Income management GUI
-├── budget_pages.py            # Budget management GUI
-├── account_pages.py           # Account management GUI
-├── main_app.py                # Main application GUI
-├── requirements.txt           # Python dependencies
-└── README.md                  # This file
+Honorable_Honey_Badger
+│   ├── __init__.py
+│   ├── main.py                  # Entry point (or move to root)
+│   ├── operations/              # Logic layer
+│   │   ├── __init__.py
+│   │   ├── database.py			 # Database setup and operations
+│   │   ├── finance_operations.py
+│   ├── gui/                     # GUI pages
+│   │   ├── __init__.py
+│   │   ├── account_pages/py
+│   │   ├── auth.py
+│   │   ├── budget_pages.py
+│   │   ├── expense_pages.py
+│   │   ├── income_pages.py
+│   │   ├── main_app.py
+│   └── images/                  # Images, icons, CSS, etc.
+│       └── HHB_1.png
+├── requirements.txt             # Dependencies
+├── README.md                    # Documentation
+├── setup.py / pyproject.toml    # (optional, for packaging)
+
 ```
 
 ## Installation
