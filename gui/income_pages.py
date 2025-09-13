@@ -305,7 +305,17 @@ class IncomePages:
             )
 
         for inc in income:
-            tree.insert("", "end", values=inc)
+            # Convert the income tuple to a list so we can modify the amount
+            inc_list = list(inc)
+            # Format the amount (assuming it's at index 3) as US currency
+            try:
+                amount = float(inc_list[3])
+                inc_list[3] = f"${amount:,.2f}"
+            except (ValueError, IndexError):
+                # If conversion fails, keep original value
+                pass
+
+        tree.insert("", "end", values=inc_list)
 
         ttk.Button(
             self.parent_frame, text="Back to Income", bootstyle="danger",

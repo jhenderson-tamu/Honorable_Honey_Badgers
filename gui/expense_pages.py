@@ -306,12 +306,21 @@ class ExpensePages:
             )
 
         for exp in expenses:
-            tree.insert("", "end", values=exp)
+            # Convert the expenses tuple to a list so we can modify the amount
+            exp_list = list(exp)
+            # Format the amount (assuming it's at index 3) as US currency
+            try:
+                amount = float(exp_list[3])
+                exp_list[3] = f"${amount:,.2f}"
+            except (ValueError, IndexError):
+                # If conversion fails, keep original value
+                pass
+
+        tree.insert("", "end", values=exp_list)
 
         ttk.Button(
             self.parent_frame, text="Back to Expenses", bootstyle="danger",
-            command=self.create_expenses_page
-        ).pack(pady=5)
+            command=self.create_expenses_page).pack(pady=5)
 
     # ------------------------------------------------------------------
     # Remove Expenses
