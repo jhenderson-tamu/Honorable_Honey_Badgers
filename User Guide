@@ -1,1 +1,121 @@
+Login: 
+The login feature secures access to the personal finance application. 
+Each user has their own account, ensuring that financial data remains private and isolated.
+
+Run the program with:
+main.py
+In the login window-
+For new users:
+Enter a username and password
+Click Register
+
+For existing users:
+Enter your username and password
+Click Login
+If correct, you’ll be taken to the Main Dashboard.
+What Happens Behind the Scenes
+User information is stored securely in users.db
+The app logs each login attempt, which you can later view under Account → Login History
+Error Messages & Fixes
+“Invalid username or password” → Check spelling or register a new account first
+“Incorrect password” → Make sure Caps Lock is off, program will give
+Database error → Delete users.db and restart the program to reset accounts
+Security Notes
+Use a strong password (mix of letters, numbers, symbols)
+  Each account’s financial data is stored separately in finance.db
+  Logging out or closing the app will end your session
+
+Expense:
+You can use the Expenses section to view, add, and remove expenses to help keep track of your finances. All actions are saved under your current username and don’t affect other users.
+
+Open the Expenses tab on the main page. You will see that you have 4 courses of action to choose from depending on your needs:
+Manual Entry
+Here you can manually enter in any expenses that you want to add
+Enter in the amount in numbers (don’t enter in the $ sign). Decimals are acceptable input as well.
+Enter the date that you had the expense in the format (YYY-MM-DD)
+Select the category from the dropdown to specify what type of expense you had, or you can choose to add a new category to describe the expense (to help you see what your money is being spent on)
+Then click on the Save Expenses button
+Import Expense
+You can choose to import a CSV file of your expenses
+Click on the browse button to look for the CSV file containing your expenses on your computer. Then it will show that you have selected a file.
+Then click on the import button so that the finance tracker can utilize your CSV file of expenses
+View Expense
+When viewing expenses, it will show a table of your expenses. The data schema for the table will be ID, the date you had the expense, the category, amount, and description.
+Remove Expenses
+If you want to delete an expense, simply choose an expense and click on the “Delete Selected Expense” button (you delete expenses one by one).
+
+Any time you want to go back to the “Expenses” page to view the other actions to do with expenses, click on the Back to Expenses button or click on the Expenses tab on the left.
+
+Once your are done managing your expenses, click on the Close Expense Page button to return to main page, or you can select any of the tabs on the left to manage other aspects of your finances (income, budget, reports), manage your account, or log out.
+
+Income:
+(ChatGPT: describe how to work with the income section of this application 
+using the income file code), made my own changes/additions 
+
+Income Section:
+Use the Income area to record money you earn, import income from a CSV file, 
+review your history, and delete entries you no longer need. All actions are saved 
+under your current username and don’t affect other users.
+
+Open the Income tab from the app’s main navigation.
+You’ll see these options:
+Income Manual Entry
+Import Income 
+View Income 
+Remove Income 
+Close Income Page
+
+Income Manual Entry: 
+Click Income Manual Entry. 
+Fill the form: 
+Description – e.g., “Paycheck” or “Gift” 
+Amount – numbers only (e.g., 1250.50) 
+Date (YYYY-MM-DD) – pick from the calendar or type it 
+Select Category – choose an existing category – or type a name under “Or Add New Category” and click Add Category 
+Click Save Income.
+
+Import income from CSV:
+Click Import Income. 
+Click Browse and choose a CSV file 
+Click Import.
+
+View income:
+Click View Income. 
+A table lists your entries with columns: ID, Date, Category, Amount, Description. 
+Use Back to Income to return.
+
+Remove income:
+Click Remove Income. 
+Click a row to select it. 
+Click Delete Selected Income and confirm in the popup.
+Return back to the main screen 
+
+
+
+
+
+Budget: 
+
+The budget section will serve as a net savings/budgeting tab, where users can record their savings based on income and expenses. It will be calculated by subtracting total income from total expenses. All actions will be saved under your username based on your registration at the start. 
+
+Net Savings  = Total Income - Total Expenses 
+
+Open the budget tab, and you will see the following.
+Start Date (YYYY-MM-DD) - Beginning of tracking period 
+End Data (YYYY-MM-DD) - End of tracking Period 
+Total Expenses - All expenses within the selected date
+Total Income -  All income within the selected date
+Savings - Calculated net savings for the period 
+Calculate Budget - Runs the calculation and updates the saving field
+Back - Returns to the previous menu
+
+Import Expense and Income based on the criteria above 
+
+Dates Manual Entry 
+Enter the start date to define when income/expense tracking begins 
+Enter the end date to define when income/expense tracking ends
+
+Calculate Budget 
+Once you enter the dates, the system will display total income and expenses for the specified period
+Click the Calculate budget tab, and the application will compute and display net savings 
 
