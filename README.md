@@ -29,8 +29,8 @@ Honorable_Honey_Badger
 │   ├── finance.db              # Financial Data
 │   └── users.db                # User Data
 ├── Docs/                       # Documentation
-│   ├── [ISTM 601 - Group 8 Python (Group Contract) - Phase 1.pdf](Docs/ISTM%20601%20-%20Group%208%20Python%20(group%20contract)%20-%20Phase%201.pdf)
-│   └── [ISTM 601 - Group 8 User Manual - Phase 2.pdf](Docs/ISTM%20601%20-%20Group%208%20User%20Manual%20-%20Phase%202.pdf)
+│   ├── [ISTM 601 - Group 8 Python (Group Contract) - Phase 1.pdf]
+│   └── [ISTM 601 - Group 8 User Manual - Phase 2.pdf]
 ├── gui/                        # GUI pages
 │   ├── __init__.py
 │   ├── account_pages.py        # Account management
