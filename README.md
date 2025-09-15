@@ -31,6 +31,7 @@ Honorable_Honey_Badger
 ├── Docs/                       # Documentation
 │   ├── [ISTM 601 - Group 8 Python (Group Contract) - Phase 1.pdf]
 │   └── [ISTM 601 - Group 8 User Manual - Phase 2.pdf]
+│   └── [ISTM 601 - Group 8 Technical Manual - Phase 2.pdf]
 ├── gui/                        # GUI pages
 │   ├── __init__.py
 │   ├── account_pages.py        # Account management
