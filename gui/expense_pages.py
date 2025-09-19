@@ -18,7 +18,9 @@ from tkinter import filedialog, StringVar
 from datetime import datetime
 import os
 from operations.finance_operations import FinanceOperations
-
+from operations import reports
+from pathlib import Path
+from datetime import datetime
 
 class ExpensePages:
     """Class to handle expense-related GUI pages."""
@@ -70,6 +72,11 @@ class ExpensePages:
         ttk.Button(
             frame, text="Remove Expenses", bootstyle="primary", width=20,
             command=self.remove_expenses_page
+        ).pack(pady=10)
+
+        ttk.Button(
+            frame, text="Generate Reports", bootstyle="success", width=20,
+            command=self.generate_reports_page
         ).pack(pady=10)
 
         ttk.Button(
@@ -393,6 +400,38 @@ class ExpensePages:
             self.parent_frame, text="Back to Expenses", bootstyle="danger",
             command=self.create_expenses_page
         ).pack(pady=5)
+
+    # ------------------------------------------------------------------
+    # Generate Reports
+    # ------------------------------------------------------------------
+
+    def generate_reports_page(self):
+        """Run reports and show success message."""
+        self._clear_parent_frame()
+
+        ttk.Label(
+            self.parent_frame,
+            text=f"Generating Reports for {self.username}",
+            font=("Helvetica", 14, "bold")
+        ).pack(pady=15)
+
+        db_path = Path("data/finance.db")
+        today = datetime.today()
+        start_date = today.replace(month=1, day=1).strftime("%Y-%m-%d")
+        end_date = today.strftime("%Y-%m-%d")
+
+        result = reports.generate_reports(db_path, self.username, start_date, end_date)
+
+        ttk.Label(
+            self.parent_frame,
+            text=f"Reports saved in: {result['output_dir']}",
+            foreground="green"
+        ).pack(pady=10)
+
+        ttk.Button(
+            self.parent_frame, text="Back to Expenses",
+            bootstyle="danger", command=self.create_expenses_page
+        ).pack(pady=10)
 
     # ------------------------------------------------------------------
     # Helper Method
