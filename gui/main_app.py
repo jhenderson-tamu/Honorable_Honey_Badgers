@@ -17,6 +17,7 @@ from gui.expense_pages import ExpensePages
 from gui.income_pages import IncomePages
 from gui.budget_pages import BudgetPages
 from gui.account_pages import AccountPages
+from gui.report_pages import ReportPages
 
 
 class MainApp:
@@ -69,6 +70,7 @@ class MainApp:
         self.income_pages = IncomePages(self.username, self.content_frame)
         self.budget_pages = BudgetPages(self.username, self.content_frame)
         self.account_pages = AccountPages(self.username, self.content_frame)
+        self.report_pages = ReportPages(self.username, self.content_frame)
 
         self.setup_sidebar()
 
@@ -130,11 +132,7 @@ class MainApp:
     def show_reports(self):
         """Display the reports page (currently placeholder)."""
         self.clear_content_frame()
-        ttk.Label(
-            self.content_frame,
-            text="Reports Page - Coming Soon!",
-            font=("Helvetica", 14)
-        ).pack(pady=20)
+        self.report_pages.create_report_page()
 
     def show_account(self):
         """Display the account management page."""

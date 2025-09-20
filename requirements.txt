@@ -1,3 +1,4 @@
+pillow
 # requirements.txt - Python dependencies for Personal Finance Application
 
 pandas>=1.5.0

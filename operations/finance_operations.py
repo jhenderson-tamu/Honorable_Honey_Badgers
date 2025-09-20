@@ -247,9 +247,11 @@ class FinanceOperations:
     # ------------------------------
 
     @staticmethod
-    def import_expenses_from_csv(filepath: str, username: str) -> tuple[bool, str]:
+    def import_expenses_from_csv(filepath: str, username: str) -> tuple[
+        bool, str]:
         """
-        Import expenses from a CSV file.
+        Import expenses from a CSV file, automatically adding
+        new categories to the expense_category table.
 
         Args:
             filepath (str): Path to the CSV file.
@@ -265,21 +267,44 @@ class FinanceOperations:
             if not required_cols.issubset(df.columns):
                 return False, "CSV is missing required columns (date, category, amount)."
 
+            new_categories = set()
+
             with sql.connect("data/finance.db") as conn:
                 cursor = conn.cursor()
+
                 for _, row in df.iterrows():
+                    date = str(row["date"]).strip()
+                    category = str(row["category"]).strip()
+                    amount = float(row["amount"])
+                    description = str(row.get("description", "")).strip()
+
+                    # --- Ensure category exists ---
+                    cursor.execute(
+                        "SELECT id FROM expense_category WHERE name = ?",
+                        (category,))
+                    if cursor.fetchone() is None:
+                        try:
+                            cursor.execute(
+                                "INSERT INTO expense_category (name) VALUES (?)",
+                                (category,))
+                            new_categories.add(category)
+                        except sql.IntegrityError:
+                            pass  # ignore race condition if inserted in parallel
+
+                    # --- Insert expense ---
                     cursor.execute("""
-                        INSERT INTO expenses (date, category, amount, description, username)
-                        VALUES (?, ?, ?, ?, ?)
-                    """, (
-                        row["date"],
-                        row["category"],
-                        float(row["amount"]),
-                        row.get("description", ""),
-                        username
-                    ))
+                           INSERT INTO expenses (date, category, amount, description, username)
+                           VALUES (?, ?, ?, ?, ?)
+                       """, (date, category, amount, description, username))
+
                 conn.commit()
-            return True, "File imported successfully!"
+
+            # Build success message
+            if new_categories:
+                return True, f"File imported successfully! Added new categories: {', '.join(sorted(new_categories))}."
+            else:
+                return True, "File imported successfully! No new categories added."
+
         except Exception as e:
             return False, f"Error importing file: {e}"
 
