@@ -17,8 +17,7 @@ from gui.expense_pages import ExpensePages
 from gui.income_pages import IncomePages
 from gui.budget_pages import BudgetPages
 from gui.account_pages import AccountPages
-from analytics.analytics_pages import ReportPages
-
+from analytics.analytics_pages import AnalyticPages
 
 class MainApp:
     """Main application class to build and manage the GUI."""
@@ -72,7 +71,7 @@ class MainApp:
         self.income_pages = IncomePages(self.username, self.content_frame)
         self.budget_pages = BudgetPages(self.username, self.content_frame)
         self.account_pages = AccountPages(self.username, self.content_frame)
-        self.report_pages = ReportPages(self.username, self.content_frame)
+        self.analytic_pages = AnalyticPages(self.username, self.content_frame)
 
         # Build sidebar navigation
         self._setup_sidebar()
@@ -83,7 +82,7 @@ class MainApp:
             ("Expenses", self.show_expenses),
             ("Income", self.show_income),
             ("Budget", self.show_budget),
-            ("Reports", self.show_reports),
+            ("Analytics", self.show_analytics),
             ("Manage Account", self.show_account),
         ]
 
@@ -126,10 +125,10 @@ class MainApp:
         self._clear_content_frame()
         self.budget_pages.create_budget_page()
 
-    def show_reports(self):
-        """Display the reports (analytics) page."""
+    def show_analytics(self):
+        """Display the analytics page."""
         self._clear_content_frame()
-        self.report_pages.create_report_page()
+        self.analytic_pages.create_analytic_page()
 
     def show_account(self):
         """Display the account management page."""
