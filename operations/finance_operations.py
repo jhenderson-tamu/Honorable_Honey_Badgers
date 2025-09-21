@@ -161,46 +161,52 @@ class FinanceOperations:
             return False, f"Database error: {e}"
 
     @staticmethod
-    def get_user_expenses(username: str) -> list[tuple]:
-        """
-        Get all expenses for a specific user.
-
-        Args:
-            username (str): Username to filter expenses by.
-
-        Returns:
-            list[tuple]: List of expense records.
-        """
+    def get_user_expenses(username: str):
+        import sqlite3 as sql
         with sql.connect("data/finance.db") as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
+            c = conn.cursor()
+            c.execute("""
                 SELECT id, date, category, amount, description
-                FROM expenses
-                WHERE username=?
+                FROM (
+                    SELECT
+                        id, date, category, amount, description,
+                        substr(trim(date), 1, 10) AS d,
+                        instr(substr(trim(date), 1, 10), '/') AS p1,
+                        instr(substr(substr(trim(date), 1, 10),
+                                     instr(substr(trim(date), 1, 10), '/') + 1), '/') + instr(substr(trim(date), 1, 10), '/') AS p2
+                    FROM expenses
+                    WHERE username = ?
+                )
+                ORDER BY
+                    CAST(substr(d, p2 + 1) AS INT) DESC,    -- Year
+                    CAST(substr(d, 1, p1 - 1) AS INT) DESC, -- Month
+                    CAST(substr(d, p1 + 1, p2 - p1 - 1) AS INT) DESC -- Day
             """, (username,))
-            expenses = cursor.fetchall()
-        return expenses
+            return c.fetchall()
 
     @staticmethod
-    def get_user_income(username: str) -> list[tuple]:
-        """
-        Get all income records for a specific user.
-
-        Args:
-            username (str): Username to filter income by.
-
-        Returns:
-            list[tuple]: List of income records.
-        """
+    def get_user_income(username: str):
+        import sqlite3 as sql
         with sql.connect("data/finance.db") as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
+            c = conn.cursor()
+            c.execute("""
                 SELECT id, date, category, amount, description
-                FROM income
-                WHERE username=?
+                FROM (
+                    SELECT
+                        id, date, category, amount, description,
+                        substr(trim(date), 1, 10) AS d,
+                        instr(substr(trim(date), 1, 10), '/') AS p1,
+                        instr(substr(substr(trim(date), 1, 10),
+                                     instr(substr(trim(date), 1, 10), '/') + 1), '/') + instr(substr(trim(date), 1, 10), '/') AS p2
+                    FROM income
+                    WHERE username = ?
+                )
+                ORDER BY
+                    CAST(substr(d, p2 + 1) AS INT) DESC,    -- Year
+                    CAST(substr(d, 1, p1 - 1) AS INT) DESC, -- Month
+                    CAST(substr(d, p1 + 1, p2 - p1 - 1) AS INT) DESC -- Day
             """, (username,))
-            income = cursor.fetchall()
-        return income
+            return c.fetchall()
 
     @staticmethod
     def delete_expense(expense_id: int) -> tuple[bool, str]:

@@ -282,7 +282,8 @@ class IncomePages:
 
         income = self.finance_ops.get_user_income(self.username)
         if not income:
-            ttk.Label(self.parent_frame, text="No Income to view.").pack(pady=10)
+            ttk.Label(self.parent_frame, text="No Income to view.").pack(
+                pady=10)
             ttk.Button(
                 self.parent_frame, text="Back to Income", bootstyle="danger",
                 command=self.create_income_page
@@ -304,18 +305,14 @@ class IncomePages:
                 else 25 if col == "Category" else 50
             )
 
-        for inc in income:
-            # Convert the income tuple to a list so we can modify the amount
+        for inc in income:  # loop over all rows
             inc_list = list(inc)
-            # Format the amount (assuming it's at index 3) as US currency
             try:
                 amount = float(inc_list[3])
                 inc_list[3] = f"${amount:,.2f}"
             except (ValueError, IndexError):
-                # If conversion fails, keep original value
                 pass
-
-        tree.insert("", "end", values=inc_list)
+            tree.insert("", "end", values=inc_list)
 
         ttk.Button(
             self.parent_frame, text="Back to Income", bootstyle="danger",
@@ -337,7 +334,8 @@ class IncomePages:
 
         income = self.finance_ops.get_user_income(self.username)
         if not income:
-            ttk.Label(self.parent_frame, text="No Income to remove.").pack(pady=10)
+            ttk.Label(self.parent_frame, text="No Income to remove.").pack(
+                pady=10)
             ttk.Button(
                 self.parent_frame, text="Back to Income", bootstyle="danger",
                 command=self.create_income_page
@@ -359,21 +357,28 @@ class IncomePages:
                 else 25 if col == "Category" else 50
             )
 
-        for inc in income:
+        for inc in income:  # income is already sorted DESC by DB
             tree.insert("", "end", values=inc)
 
         def delete_selected():
             """Delete the selected income record."""
             selected = tree.selection()
             if not selected:
-                Messagebox.show_error("Please select an income to delete.", "Error")
+                Messagebox.show_error("Please select an income to delete.",
+                                      "Error")
                 return
 
             item = tree.item(selected[0])["values"]
             income_id = item[0]
 
+            try:
+                amount_val = float(
+                    str(item[3]).replace("$", "").replace(",", ""))
+            except ValueError:
+                amount_val = 0.0
+
             response = Messagebox.okcancel(
-                f"Delete income: {item[0]} (${float(item[3]):.2f}) "
+                f"Delete income: {income_id} (${amount_val:,.2f}) "
                 f"in {item[2]} from {item[1]}?",
                 "Confirm Delete"
             )
@@ -391,6 +396,7 @@ class IncomePages:
             self.parent_frame, text="Delete Selected Income",
             command=delete_selected, bootstyle="danger"
         ).pack(pady=5)
+
         ttk.Button(
             self.parent_frame, text="Back to Income", bootstyle="danger",
             command=self.create_income_page
