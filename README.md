@@ -13,6 +13,7 @@ This modular version breaks down the original monolithic code into organized, ma
 - **Expense Management**: Add, view, edit, and delete expenses with categories
 - **Income Tracking**: Manage income sources with categorization
 - **Budget Overview**: Calculate budget summaries for custom date ranges
+- **Analytics**: Interactive charts for understanding expense and income trends
 - **CSV Import/Export**: Import financial data from CSV files
 - **Account Management**: Change passwords and view login history
 - **Multi-user Support**: Each user has their own isolated financial data
@@ -20,32 +21,45 @@ This modular version breaks down the original monolithic code into organized, ma
 ## Project Structure
 
 ```plaintext
-Honorable_Honey_Badger
+Honorable_Honey_Badgers/
 ├── __init__.py
 ├── main.py                     # Application entry point
 ├── README.md                   # Technical Documentation
 ├── requirements.txt            # Dependencies
+│
 ├── data/                       # Databases
 │   ├── finance.db              # Financial Data
 │   └── users.db                # User Data
+│
 ├── Docs/                       # Documentation
-│   ├── [ISTM 601 - Group 8 Python (Group Contract) - Phase 1.pdf]
-│   └── [ISTM 601 - Group 8 User Manual - Phase 2.pdf]
-│   └── [ISTM 601 - Group 8 Technical Manual - Phase 2.pdf]
-├── gui/                        # GUI pages
+│   ├── ISTM 601 - Group 8 Python (Group Contract) - Phase 1.pdf
+│   ├── ISTM 601 - Group 8 User Manual - Phase 2.pdf
+│   └── ISTM 601 - Group 8 Technical Manual - Phase 2.pdf
+│
+├── gui/                        # GUI page controllers
 │   ├── __init__.py
-│   ├── account_pages.py        # Account management
-│   ├── auth.py                 # User Register/Logon
-│   ├── budget_pages.py         # Budget Reporting
-│   ├── expense_pages.py        # User Expense Page
-│   ├── income_pages.py         # User Income Page
-│   └── main_app.py             # Main Page
-├── images/                     # Images, icons, CSS, etc.
-│   └── HHB_1.png               # Login Page Image
-└── operations/                 # Logic layer
+│   ├── account_pages.py        # Account management (password, history)
+│   ├── auth.py                 # User authentication (register/login)
+│   ├── budget_pages.py         # Budget overview & savings handling
+│   ├── expense_pages.py        # Expense management (CRUD, CSV import)
+│   ├── income_pages.py         # Income management (CRUD, CSV import)
+│   ├── report_pages.py         # Analytics/Reports menu
+│   └── main_app.py             # Main navigation frame
+│
+├── analytics/                  # Reporting & visualization
+│   ├── __init__.py
+│   ├── category.py             # Expenses by category (Pie chart)
+│   ├── monthly.py              # Monthly expenses (Bar chart)
+│   ├── top_categories.py       # Top categories with date filter
+│   └── cash_flow.py            # Cash flow (Income vs Expenses line chart)
+│
+├── images/                     # Images & assets
+│   └── HHB_1.png               # Login page banner
+│
+└── operations/                 # Business logic & DB operations
     ├── __init__.py
-    ├── database.py             # Database setup and operations
-    └── finance_operations.py   # Finance DB Operations
+    ├── database.py             # Database setup
+    └── finance_operations.py   # CRUD, CSV import/export, budget summary
 ```
 
 ## Installation
