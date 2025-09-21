@@ -1,6 +1,8 @@
 import ttkbootstrap as ttk
 from .category import CategoryReport
 from .monthly import MonthlyReport
+from .top_categories import TopCategoriesReport
+from .cash_flow import CashFlowReport
 
 
 class AnalyticPages:
@@ -39,6 +41,20 @@ class AnalyticPages:
                 self.parent_frame, self.username, self._show_analytic_options
             ).show()
         ).pack(pady=5)
+
+        ttk.Button(frame, text="Top Categories (Bar)",
+                   bootstyle="info", width=30,
+                   command=lambda: TopCategoriesReport(
+                       self.parent_frame, self.username,
+                       self._show_analytic_options
+                   ).show()).pack(pady=5)
+
+        ttk.Button(frame, text="Cash Flow (Income vs Expenses)",
+                   bootstyle="info", width=30,
+                   command=lambda: CashFlowReport(
+                       self.parent_frame, self.username,
+                       self._show_analytic_options
+                   ).show()).pack(pady=5)
 
         # --- New Close Button ---
         def close_analytics_page():

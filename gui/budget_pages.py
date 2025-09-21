@@ -5,8 +5,6 @@
 # PROCESS: Collects user-selected date range, retrieves data from
 # FinanceOperations, calculates totals, and updates GUI.
 # OUTPUT: Total expenses, income, and leftover savings shown on screen.
-# HONOR CODE: On my honor, as an Aggie, I have neither given nor
-# received unauthorized aid on this academic work.
 
 import tkinter as tk
 import ttkbootstrap as ttk
@@ -65,6 +63,7 @@ class BudgetPages:
         expense_var = tk.StringVar(value="Total Expenses: $0.00")
         income_var = tk.StringVar(value="Total Income: $0.00")
         leftover_var = tk.StringVar(value="Total Savings: $0.00")
+        savings_var = tk.StringVar(value="Savings Transfers: $0.00")
 
         ttk.Label(
             frame, textvariable=expense_var, font=("Helvetica", 12)
@@ -75,31 +74,33 @@ class BudgetPages:
         ttk.Label(
             frame, textvariable=leftover_var, font=("Helvetica", 12, "bold")
         ).pack(anchor="w", pady=10)
+        ttk.Label(
+            frame, textvariable=savings_var, font=("Helvetica", 12)
+        ).pack(anchor="w", pady=5)
 
-        def calculate_budget():
-            """
-            Calculate and update budget summary for the selected date range.
-            """
+        # --- Budget Calculation Function ---
+        def update_budget(*args):
             start_date = start_entry.get_date().strftime("%Y-%m-%d")
             end_date = end_entry.get_date().strftime("%Y-%m-%d")
 
-            total_expenses, total_income, leftover = self.finance_ops.get_budget_summary(
+            total_expenses, total_income, net_savings, savings_transfers = self.finance_ops.get_budget_summary(
                 self.username, start_date, end_date
             )
 
-            # Update UI labels
             expense_var.set(f"Total Expenses: ${total_expenses:,.2f}")
             income_var.set(f"Total Income: ${total_income:,.2f}")
-            leftover_var.set(f"Total Savings: ${leftover:,.2f}")
+            leftover_var.set(f"Net Savings: ${net_savings:,.2f}")
+            savings_var.set(f"Savings Transfers: ${savings_transfers:,.2f}")
 
-        # --- Buttons ---
-        ttk.Button(
-            frame, text="Calculate Budget", bootstyle="success",
-            command=calculate_budget
-        ).pack(pady=15)
+        # Auto-update when dates change
+        start_entry.bind("<<DateEntrySelected>>", update_budget)
+        end_entry.bind("<<DateEntrySelected>>", update_budget)
 
+        # Run once on load
+        update_budget()
+
+        # --- Close Button ---
         def back_to_main():
-            """Clear the parent frame and return to main menu."""
             for widget in self.parent_frame.winfo_children():
                 widget.destroy()
 

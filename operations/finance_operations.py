@@ -356,37 +356,50 @@ class FinanceOperations:
     # ------------------------------
 
     @staticmethod
-    def get_budget_summary(username: str,
-                           start_date: str,
-                           end_date: str) -> tuple[float, float, float]:
+    def get_budget_summary(username: str, start_date: str, end_date: str):
         """
-        Calculate total expenses, income, and leftover funds
-        for a user over a date range.
+        Calculate total expenses, total income, net savings, and savings transfers
+        for a date range.
 
-        Args:
-            username (str): Username to filter data by.
-            start_date (str): Start date (YYYY-MM-DD).
-            end_date (str): End date (YYYY-MM-DD).
-
-        Returns:
-            tuple[float, float, float]: (total_expenses, total_income, leftover)
+        - Normal expenses reduce money.
+        - 'Savings' category expenses are treated as transfers into savings.
+        - Net savings = Income - Normal Expenses + Savings Transfers.
         """
         with sql.connect("data/finance.db") as conn:
-            cursor = conn.cursor()
+            expenses = pd.read_sql_query(
+                "SELECT date, category, amount FROM expenses WHERE username = ?",
+                conn, params=(username,)
+            )
+            income = pd.read_sql_query(
+                "SELECT date, amount FROM income WHERE username = ?",
+                conn, params=(username,)
+            )
 
-            cursor.execute("""
-                SELECT COALESCE(SUM(amount), 0)
-                FROM expenses
-                WHERE username=? AND date BETWEEN ? AND ?
-            """, (username, start_date, end_date))
-            total_expenses = cursor.fetchone()[0]
+        # Convert to datetime
+        for df in [expenses, income]:
+            if not df.empty:
+                df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
-            cursor.execute("""
-                SELECT COALESCE(SUM(amount), 0)
-                FROM income
-                WHERE username=? AND date BETWEEN ? AND ?
-            """, (username, start_date, end_date))
-            total_income = cursor.fetchone()[0]
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
 
-        leftover = total_income - total_expenses
-        return total_expenses, total_income, leftover
+        # Filter by date range
+        if not expenses.empty:
+            expenses = expenses[(expenses["date"] >= start_date) & (expenses["date"] <= end_date)]
+        if not income.empty:
+            income = income[(income["date"] >= start_date) & (income["date"] <= end_date)]
+
+        # Separate savings from normal expenses
+        if not expenses.empty:
+            savings_transfers = expenses.loc[expenses["category"].str.lower() == "savings", "amount"].sum()
+            normal_expenses = expenses.loc[expenses["category"].str.lower() != "savings", "amount"].sum()
+        else:
+            savings_transfers = 0.0
+            normal_expenses = 0.0
+
+        total_income = income["amount"].sum() if not income.empty else 0.0
+        total_expenses = normal_expenses
+        net_savings = total_income - normal_expenses + savings_transfers
+
+        return total_expenses, total_income, net_savings, savings_transfers
+
