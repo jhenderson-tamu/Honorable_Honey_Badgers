@@ -17,7 +17,7 @@ from gui.expense_pages import ExpensePages
 from gui.income_pages import IncomePages
 from gui.budget_pages import BudgetPages
 from gui.account_pages import AccountPages
-from gui.report_pages import ReportPages
+from analytics.analytics_pages import ReportPages
 
 
 class MainApp:
@@ -31,12 +31,12 @@ class MainApp:
             username (str): Username of the logged-in user.
         """
         self.username = username
-        self.setup_main_window()
+        self._setup_main_window()
 
     # ------------------------------------------------------------------
     # Window Setup
     # ------------------------------------------------------------------
-    def setup_main_window(self):
+    def _setup_main_window(self):
         """Configure and display the main application window."""
         # Reset style instance before creating the main window
         ttk.Style.instance = None
@@ -44,7 +44,7 @@ class MainApp:
         # Create and configure main window
         self.main = ttk.Window(themename="solar")
         self.main.title("Main Application")
-        self.main.geometry("800x800")
+        self.main.geometry("850x800")
 
         # Welcome message
         ttk.Label(
@@ -57,9 +57,11 @@ class MainApp:
         container = ttk.Frame(self.main)
         container.pack(fill="both", expand=YES)
 
+        # Sidebar
         self.sidebar = ttk.Frame(container, padding=10)
         self.sidebar.pack(side="left", fill="y")
 
+        # Content frame
         self.content_frame = ttk.Frame(
             container, padding=10, relief="ridge", borderwidth=2
         )
@@ -72,71 +74,66 @@ class MainApp:
         self.account_pages = AccountPages(self.username, self.content_frame)
         self.report_pages = ReportPages(self.username, self.content_frame)
 
-        self.setup_sidebar()
+        # Build sidebar navigation
+        self._setup_sidebar()
 
-    def setup_sidebar(self):
+    def _setup_sidebar(self):
         """Create sidebar navigation buttons."""
-        ttk.Button(
-            self.sidebar, text="Expenses", bootstyle="primary",
-            command=self.show_expenses
-        ).pack(fill="x", pady=5)
+        menu_items = [
+            ("Expenses", self.show_expenses),
+            ("Income", self.show_income),
+            ("Budget", self.show_budget),
+            ("Reports", self.show_reports),
+            ("Manage Account", self.show_account),
+        ]
 
-        ttk.Button(
-            self.sidebar, text="Income", bootstyle="primary",
-            command=self.show_income
-        ).pack(fill="x", pady=5)
+        for text, command in menu_items:
+            ttk.Button(
+                self.sidebar,
+                text=text,
+                bootstyle="primary",
+                command=command
+            ).pack(fill="x", pady=5)
 
+        # Logout button
         ttk.Button(
-            self.sidebar, text="Budget", bootstyle="primary",
-            command=self.show_budget
-        ).pack(fill="x", pady=5)
-
-        ttk.Button(
-            self.sidebar, text="Reports", bootstyle="primary",
-            command=self.show_reports
-        ).pack(fill="x", pady=5)
-
-        ttk.Button(
-            self.sidebar, text="Manage Account", bootstyle="primary",
-            command=self.show_account
-        ).pack(fill="x", pady=5)
-
-        ttk.Button(
-            self.sidebar, text="Logout", bootstyle="danger",
+            self.sidebar,
+            text="Logout",
+            bootstyle="danger",
             command=self.logout
         ).pack(fill="x", pady=20)
 
     # ------------------------------------------------------------------
     # Page Display Methods
     # ------------------------------------------------------------------
-    def clear_content_frame(self):
+    def _clear_content_frame(self):
         """Clear all widgets from the content frame."""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 
     def show_expenses(self):
         """Display the expenses page."""
-        self.clear_content_frame()
+        self._clear_content_frame()
         self.expense_pages.create_expenses_page()
 
     def show_income(self):
         """Display the income page."""
-        self.clear_content_frame()
+        self._clear_content_frame()
         self.income_pages.create_income_page()
 
     def show_budget(self):
         """Display the budget page."""
-        self.clear_content_frame()
+        self._clear_content_frame()
         self.budget_pages.create_budget_page()
 
     def show_reports(self):
-        """Display the reports page (currently placeholder)."""
-        self.clear_content_frame()
+        """Display the reports (analytics) page."""
+        self._clear_content_frame()
         self.report_pages.create_report_page()
 
     def show_account(self):
         """Display the account management page."""
-        self.clear_content_frame()
+        self._clear_content_frame()
         self.account_pages.create_management_page()
 
     def logout(self):
