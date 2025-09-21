@@ -28,7 +28,7 @@ class AnalyticPages:
             frame, text="Expenses by Category Report (Pie)",
             bootstyle="info", width=30,
             command=lambda: CategoryReport(
-                self.parent_frame, self.username, self._show_report_options
+                self.parent_frame, self.username, self._show_analytic_options
             ).show()
         ).pack(pady=5)
 
@@ -36,7 +36,7 @@ class AnalyticPages:
             frame, text="Monthly Expenses Report (Bar)",
             bootstyle="info", width=30,
             command=lambda: MonthlyReport(
-                self.parent_frame, self.username, self._show_report_options
+                self.parent_frame, self.username, self._show_analytic_options
             ).show()
         ).pack(pady=5)
 
