@@ -1,20 +1,19 @@
 # PROGRAM: Main Application Window
-# PURPOSE: Provide the central GUI hub of the finance management
-#          system after user login, with navigation to all core
-#          application pages including Expenses, Income, Budget,
-#          Categories, Analytics, and Account settings.
+# PURPOSE:
+#   Create and manage the main application window after a successful login.
+#   Provide navigation to Expenses, Income, Budget, Categories, Analytics,
+#   and Account management pages.
 # INPUT:
-#   - username (str): Username of the logged-in user.
+#   - Username of the logged-in user.
 # PROCESS:
-#   - Builds the main application window with a sidebar and content frame.
-#   - Creates and manages navigation between modular feature pages.
-#   - Provides a logout function that records user activity.
+#   - Build a main window with sidebar navigation and a content frame.
+#   - Load and display the correct page when a sidebar button is clicked.
+#   - Log user activity (login and logout).
 # OUTPUT:
-#   - GUI interface for managing personal finances across different modules.
-#   - Sidebar navigation for switching between pages.
-#   - Logs user logout actions for auditing.
-# HONOR CODE: On my honor, as an Aggie, I have neither given nor
-#             received unauthorized aid on this academic work.
+#   - A graphical user interface (GUI) for personal finance management.
+# HONOR CODE:
+#   On my honor, as an Aggie, I have neither given nor received
+#   unauthorized aid on this academic work.
 
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import YES
@@ -28,11 +27,11 @@ from gui.category_pages import CategoryManager
 
 
 class MainApp:
-    """Main application class that builds and manages the GUI."""
+    """Main application class to build and manage the finance app GUI."""
 
     def __init__(self, username: str):
         """
-        Initialize the main application window.
+        Initialize the main application.
 
         Args:
             username (str): Username of the logged-in user.
@@ -44,23 +43,17 @@ class MainApp:
     # Window Setup
     # ------------------------------------------------------------------
     def _setup_main_window(self):
-        """
-        Configure and display the main application window.
-
-        - Resets ttkbootstrap style to prevent conflicts.
-        - Builds the main window and layout:
-            - Sidebar for navigation.
-            - Content frame for displaying pages.
-        - Initializes all feature page objects.
-        - Creates sidebar navigation buttons.
-        """
+        """Configure and display the main application window."""
         # Reset style instance before creating the main window
         ttk.Style.instance = None
 
         # Create and configure main window
         self.main = ttk.Window(themename="solar")
         self.main.title("Main Application")
-        self.main.geometry("850x800")
+
+        # Fixed window size, centered on screen
+        width, height = 850, 800
+        self._set_geometry(width, height)
 
         # Welcome message
         ttk.Label(
@@ -69,7 +62,7 @@ class MainApp:
             font=("Helvetica", 16, "bold")
         ).pack(pady=10)
 
-        # Main container with sidebar + content frame
+        # Main container with sidebar and content frame
         container = ttk.Frame(self.main)
         container.pack(fill="both", expand=YES)
 
@@ -83,7 +76,7 @@ class MainApp:
         )
         self.content_frame.pack(side="right", fill="both", expand=YES)
 
-        # Initialize page objects
+        # Initialize page controllers
         self.expense_pages = ExpensePages(self.username, self.content_frame)
         self.income_pages = IncomePages(self.username, self.content_frame)
         self.category_pages = CategoryManager(
@@ -96,19 +89,23 @@ class MainApp:
         # Build sidebar navigation
         self._setup_sidebar()
 
-    def _setup_sidebar(self):
+    def _set_geometry(self, width: int, height: int):
         """
-        Create sidebar navigation buttons.
+        Set window geometry and center it on the screen.
 
-        Buttons provide access to:
-            - Expenses
-            - Income
-            - Budget
-            - Categories
-            - Analytics
-            - Account management
-        Includes a dedicated logout button.
+        Args:
+            width (int): Width of the window in pixels.
+            height (int): Height of the window in pixels.
         """
+        self.main.update_idletasks()
+        screen_w = self.main.winfo_screenwidth()
+        screen_h = self.main.winfo_screenheight()
+        x = (screen_w // 2) - (width // 2)
+        y = (screen_h // 2) - (height // 2)
+        self.main.geometry(f"{width}x{height}+{x}+{y}")
+
+    def _setup_sidebar(self):
+        """Create sidebar navigation buttons for app sections."""
         menu_items = [
             ("Expenses", self.show_expenses),
             ("Income", self.show_income),
@@ -138,7 +135,7 @@ class MainApp:
     # Page Display Methods
     # ------------------------------------------------------------------
     def _clear_content_frame(self):
-        """Clear all widgets from the content frame before loading a new page."""
+        """Clear all widgets from the content frame."""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 
@@ -153,7 +150,7 @@ class MainApp:
         self.income_pages.create_income_page()
 
     def show_categories(self):
-        """Display the category management page."""
+        """Display the categories management page."""
         self._clear_content_frame()
         self.category_pages.create_category_page()
 
@@ -163,7 +160,7 @@ class MainApp:
         self.budget_pages.create_budget_page()
 
     def show_analytics(self):
-        """Display the analytics (reports) page."""
+        """Display the analytics and reporting page."""
         self._clear_content_frame()
         self.analytic_pages.create_analytic_page()
 
@@ -173,12 +170,7 @@ class MainApp:
         self.account_pages.create_management_page()
 
     def logout(self):
-        """
-        Log the user out of the application.
-
-        - Records the logout action in the database.
-        - Destroys the main window, ending the session.
-        """
+        """Log the user out, record the action, and close the application."""
         log_user_action(self.username, "Logout")
         self.main.destroy()
 
