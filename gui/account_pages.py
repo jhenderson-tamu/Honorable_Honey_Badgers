@@ -1,14 +1,20 @@
 # PROGRAM: Account Management Pages
-# PURPOSE: Provide a GUI for managing user account settings such as
-# changing passwords and viewing login history.
-# INPUT: Username of the logged-in user and parent frame to display
-# content in.
-# PROCESS: Builds and displays the account management interface with
-# password change and login history features.
-# OUTPUT: Updated password (if changed) and a list of login history
-# records displayed in the GUI.
+# PURPOSE: Provide a graphical user interface (GUI) for managing
+#          user account settings such as changing passwords and
+#          viewing login history.
+# INPUT:
+#   - username (str): Username of the logged-in user.
+#   - parent_frame (Frame): Tkinter frame where this page will render.
+# PROCESS:
+#   - Displays account management options.
+#   - Provides form for updating user passwords.
+#   - Fetches and displays login history records from the database.
+#   - Logs account changes as user actions.
+# OUTPUT:
+#   - Updated password (if successfully changed).
+#   - List of login history records displayed in the GUI.
 # HONOR CODE: On my honor, as an Aggie, I have neither given nor
-# received unauthorized aid on this academic work.
+#             received unauthorized aid on this academic work.
 
 import ttkbootstrap as ttk
 from operations.database import (
@@ -27,13 +33,23 @@ class AccountPages:
 
         Args:
             username (str): Username of the logged-in user.
-            parent_frame: Frame where account pages will be displayed.
+            parent_frame (Frame): Tkinter frame where account pages will display.
         """
         self.username = username
         self.parent_frame = parent_frame
 
+    # ------------------------------------------------------------------
+    # Main Page
+    # ------------------------------------------------------------------
     def create_management_page(self):
-        """Create and display the account management page."""
+        """
+        Build and display the account management page.
+
+        Features:
+            - Change password section.
+            - Login history section.
+            - Navigation back to main menu.
+        """
         # Clear existing widgets in the parent frame
         for widget in self.parent_frame.winfo_children():
             widget.destroy()
@@ -49,7 +65,9 @@ class AccountPages:
         frame = ttk.Frame(self.parent_frame, padding=20)
         frame.pack(fill="both", expand=True)
 
-        # --- Password Change Section ---
+        # ------------------------------------------------------------------
+        # Password Change Section
+        # ------------------------------------------------------------------
         ttk.Label(
             frame, text="Change Password", font=("Helvetica", 12, "bold")
         ).pack(anchor="w", pady=(10, 5))
@@ -69,8 +87,12 @@ class AccountPages:
 
         def change_password():
             """
-            Attempt to change the user's password and update the UI
-            with the result.
+            Attempt to change the user's password.
+
+            - Validates old password.
+            - Updates the password if valid.
+            - Displays success/failure message in the UI.
+            - Logs successful password changes.
             """
             old_pw = old_pw_entry.get()
             new_pw = new_pw_entry.get()
@@ -92,7 +114,9 @@ class AccountPages:
             command=change_password
         ).pack(pady=10)
 
-        # --- Login History Section ---
+        # ------------------------------------------------------------------
+        # Login History Section
+        # ------------------------------------------------------------------
         ttk.Label(
             frame, text="Login History", font=("Helvetica", 12, "bold")
         ).pack(anchor="w", pady=(20, 5))
@@ -114,8 +138,11 @@ class AccountPages:
                     history_frame, text=f"{ts} - {action}"
                 ).pack(anchor="w")
 
+        # ------------------------------------------------------------------
+        # Back Navigation
+        # ------------------------------------------------------------------
         def back_to_main():
-            """Clear the frame and return to main menu."""
+            """Clear the frame and return to the main menu."""
             for widget in self.parent_frame.winfo_children():
                 widget.destroy()
 

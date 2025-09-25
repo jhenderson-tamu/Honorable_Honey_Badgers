@@ -1,13 +1,22 @@
 # PROGRAM: Database Setup and User Authentication
-# PURPOSE: Define functions to set up databases, initialize default
-# categories, log user activity, register users, authenticate logins,
-# manage passwords, and retrieve login history.
-# INPUT: Usernames, passwords, and user actions as function arguments.
-# PROCESS: Interacts with SQLite databases to store and retrieve data.
-# OUTPUT: Database tables created, records inserted/updated, authentication
-# results, and login history.
-# HONOR CODE: On my honor, as an Aggie, I have neither given nor
-# received unauthorized aid on this academic work.
+# PURPOSE:
+#   Manage database creation, category initialization, user registration,
+#   authentication, password updates, and login history tracking.
+# INPUT:
+#   - Usernames, passwords, and user actions passed to functions.
+# PROCESS:
+#   - Interacts with SQLite databases (`users.db` and `finance.db`).
+#   - Creates tables, inserts default categories, and stores/retrieves
+#     authentication and financial data.
+# OUTPUT:
+#   - Database tables created (if not already existing).
+#   - Default categories populated.
+#   - User credentials securely stored.
+#   - Authentication success/failure messages returned.
+#   - Login history records retrieved.
+# HONOR CODE:
+#   On my honor, as an Aggie, I have neither given nor received
+#   unauthorized aid on this academic work.
 
 import sqlite3 as sql
 import bcrypt as bc
@@ -16,9 +25,9 @@ from datetime import datetime
 
 def setup_user_db() -> None:
     """
-    Set up the user database with `users` and `logon_history` tables.
+    Create the user database with tables if they do not exist.
 
-    Creates tables if they do not exist:
+    Tables created:
         - users: Stores username and hashed password.
         - logon_history: Stores user actions with timestamps.
     """
@@ -45,8 +54,13 @@ def setup_user_db() -> None:
 
 def setup_finance_db() -> None:
     """
-    Set up the finance database with tables for expenses, income,
-    and their categories.
+    Create the finance database with expense, income, and category tables.
+
+    Tables created:
+        - expenses: Stores all expense transactions.
+        - income: Stores all income transactions.
+        - expense_category: Stores available expense categories.
+        - income_category: Stores available income categories.
     """
     with sql.connect("data/finance.db") as conn:
         cursor = conn.cursor()
@@ -90,7 +104,11 @@ def setup_finance_db() -> None:
 
 def initialize_expense_categories() -> None:
     """
-    Populate default expense categories if they do not already exist.
+    Insert default expense categories into the database if not already present.
+
+    Default categories include:
+        - Food, Transportation, Utilities, Entertainment,
+          Healthcare, Other.
     """
     conn = sql.connect("data/finance.db")
     cursor = conn.cursor()
@@ -118,7 +136,11 @@ def initialize_expense_categories() -> None:
 
 def initialize_income_categories() -> None:
     """
-    Populate default income categories if they do not already exist.
+    Insert default income categories into the database if not already present.
+
+    Default categories include:
+        - Salary/Wages, Investment Income,
+          Reimbursement, Gifts.
     """
     conn = sql.connect("data/finance.db")
     cursor = conn.cursor()
@@ -146,7 +168,7 @@ def initialize_income_categories() -> None:
 
 def log_user_action(username: str, action: str) -> None:
     """
-    Log a user action to the `logon_history` table.
+    Insert a user action into the logon_history table.
 
     Args:
         username (str): Username performing the action.
@@ -164,7 +186,7 @@ def log_user_action(username: str, action: str) -> None:
 
 def register_user(username: str, password: str) -> str:
     """
-    Register a new user with a securely hashed password.
+    Register a new user with a hashed password.
 
     Args:
         username (str): Desired username.
@@ -194,7 +216,7 @@ def register_user(username: str, password: str) -> str:
 
 def authenticate_user(username: str, password: str) -> tuple[bool, str]:
     """
-    Authenticate user login by verifying credentials.
+    Verify user login credentials.
 
     Args:
         username (str): Username.
@@ -202,8 +224,8 @@ def authenticate_user(username: str, password: str) -> tuple[bool, str]:
 
     Returns:
         tuple: (success, message)
-            success (bool): True if authentication succeeds, else False.
-            message (str): User feedback message.
+            - success (bool): True if authentication succeeds.
+            - message (str): Feedback message.
     """
     if not username or not password:
         return False, "Error! All fields are required!"
@@ -223,17 +245,17 @@ def change_user_password(username: str,
                          old_password: str,
                          new_password: str) -> tuple[bool, str]:
     """
-    Change a user's password after validating the old password.
+    Update a user's password after validating their current password.
 
     Args:
         username (str): Username.
         old_password (str): Current password.
-        new_password (str): New password to set.
+        new_password (str): New password to store.
 
     Returns:
         tuple: (success, message)
-            success (bool): True if password was updated.
-            message (str): User feedback message.
+            - success (bool): True if update was successful.
+            - message (str): Feedback message.
     """
     if not old_password or not new_password:
         return False, "Both fields are required!"
@@ -258,14 +280,14 @@ def change_user_password(username: str,
 
 def get_user_login_history(username: str, limit: int = 10) -> list[tuple]:
     """
-    Retrieve recent login history for a user.
+    Retrieve recent login history for a specific user.
 
     Args:
-        username (str): Username to filter history by.
+        username (str): Username to filter by.
         limit (int, optional): Number of records to return. Defaults to 10.
 
     Returns:
-        list[tuple]: List of (action, timestamp) tuples.
+        list[tuple]: (action, timestamp) pairs of user activity.
     """
     conn = sql.connect("data/users.db")
     cursor = conn.cursor()

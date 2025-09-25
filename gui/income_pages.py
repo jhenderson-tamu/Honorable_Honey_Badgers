@@ -1,13 +1,22 @@
 # PROGRAM: Income Management Pages
-# PURPOSE: Provide pages for adding, importing, viewing, and removing
-# user income records, including category management.
-# INPUT: Username of the logged-in user and the parent frame for display.
-# PROCESS: Creates GUI pages to manage income data, interacts with
-# FinanceOperations for data storage/retrieval, and updates the interface.
-# OUTPUT: User-entered income saved to database, displayed income tables,
-# or success/error messages in the GUI.
+# PURPOSE: Provide a complete set of GUI pages for managing income
+#          records, including adding, importing, viewing, and removing
+#          user income, with support for category management.
+# INPUT:
+#   - username (str): Username of the logged-in user.
+#   - parent_frame (tk.Frame): The container where income pages are displayed.
+# PROCESS:
+#   - Builds GUI pages to allow users to add new income entries manually.
+#   - Supports importing income records from CSV files.
+#   - Displays existing income entries in tabular form.
+#   - Allows deletion of income records with confirmation.
+#   - Uses FinanceOperations to interact with the database for all actions.
+# OUTPUT:
+#   - User-entered or imported income saved to the database.
+#   - Income records displayed in tables with formatted values.
+#   - Success or error messages shown in the GUI.
 # HONOR CODE: On my honor, as an Aggie, I have neither given nor
-# received unauthorized aid on this academic work.
+#             received unauthorized aid on this academic work.
 
 import tkinter as tk
 import ttkbootstrap as ttk
@@ -28,7 +37,7 @@ class IncomePages:
 
         Args:
             username (str): Username of the logged-in user.
-            parent_frame: The frame where income pages will be displayed.
+            parent_frame (tk.Frame): Frame where income pages will be displayed.
         """
         self.username = username
         self.parent_frame = parent_frame
@@ -38,7 +47,15 @@ class IncomePages:
     # Main Income Menu
     # ------------------------------------------------------------------
     def create_income_page(self):
-        """Create the main income menu with available options."""
+        """
+        Build and display the main income menu.
+
+        Features:
+            - Manual entry of income.
+            - Import income from CSV file.
+            - View all income in a table.
+            - Remove selected income entries.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -50,30 +67,25 @@ class IncomePages:
         frame = ttk.Frame(self.parent_frame, padding=20)
         frame.pack(fill="both", expand=True)
 
-        ttk.Button(
-            frame, text="Income Manual Entry", bootstyle="primary", width=20,
-            command=self.income_entry_page
-        ).pack(pady=10)
+        ttk.Button(frame, text="Income Manual Entry",
+                   bootstyle="primary", width=20,
+                   command=self.income_entry_page).pack(pady=10)
 
-        ttk.Button(
-            frame, text="Import Income", bootstyle="primary", width=20,
-            command=self.import_income_csv
-        ).pack(pady=10)
+        ttk.Button(frame, text="Import Income",
+                   bootstyle="primary", width=20,
+                   command=self.import_income_csv).pack(pady=10)
 
-        ttk.Button(
-            frame, text="View Income", bootstyle="primary", width=20,
-            command=self.view_income_page
-        ).pack(pady=10)
+        ttk.Button(frame, text="View Income",
+                   bootstyle="primary", width=20,
+                   command=self.view_income_page).pack(pady=10)
 
-        ttk.Button(
-            frame, text="Remove Income", bootstyle="primary", width=20,
-            command=self.remove_income_page
-        ).pack(pady=10)
+        ttk.Button(frame, text="Remove Income",
+                   bootstyle="primary", width=20,
+                   command=self.remove_income_page).pack(pady=10)
 
-        ttk.Button(
-            frame, text="Close Income Page", bootstyle="danger", width=20,
-            command=self.close_income_page
-        ).pack(pady=20)
+        ttk.Button(frame, text="Close Income Page",
+                   bootstyle="danger", width=20,
+                   command=self.close_income_page).pack(pady=20)
 
     def close_income_page(self):
         """Close the income page by clearing all widgets."""
@@ -83,7 +95,15 @@ class IncomePages:
     # Income Entry Page
     # ------------------------------------------------------------------
     def income_entry_page(self):
-        """Create the manual income entry page."""
+        """
+        Create the manual income entry page.
+
+        Features:
+            - Input fields for description, amount, date, and category.
+            - Category dropdown with ability to add new categories.
+            - Validation for required fields and numeric input.
+            - Buttons for saving, adding categories, and returning to menu.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -133,15 +153,13 @@ class IncomePages:
 
         # --- Helper Functions ---
         def show_notification(message, type="info"):
-            """Display a temporary notification message."""
+            """Display a temporary notification message (3s)."""
             color = {"info": "green", "error": "red"}.get(type, "black")
             notification_label.config(text=message, foreground=color)
-            notification_label.after(
-                3000, lambda: notification_label.config(text="")
-            )
+            notification_label.after(3000, lambda: notification_label.config(text=""))
 
         def add_category():
-            """Add a new income category to the database."""
+            """Add a new income category and update dropdown list."""
             new_cat = new_category_entry.get().strip()
             if not new_cat:
                 show_notification("Category name cannot be empty.", "error")
@@ -152,9 +170,7 @@ class IncomePages:
 
             if success:
                 new_category_entry.delete(0, "end")
-                category_menu.config(
-                    values=self.finance_ops.load_income_categories()
-                )
+                category_menu.config(values=self.finance_ops.load_income_categories())
                 category_var.set(new_cat)
 
         def save_income():
@@ -191,24 +207,22 @@ class IncomePages:
                 date_entry.set_date(datetime.today())
 
         # --- Buttons ---
-        ttk.Button(
-            form_frame, text="Add Category", bootstyle="info",
-            command=add_category
-        ).pack(pady=5)
-        ttk.Button(
-            form_frame, text="Save Income", bootstyle="success",
-            command=save_income
-        ).pack(pady=15)
-        ttk.Button(
-            form_frame, text="Back to Income", bootstyle="danger",
-            command=self.create_income_page
-        ).pack(pady=10)
+        ttk.Button(form_frame, text="Add Category", bootstyle="info", command=add_category).pack(pady=5)
+        ttk.Button(form_frame, text="Save Income", bootstyle="success", command=save_income).pack(pady=15)
+        ttk.Button(form_frame, text="Back to Income", bootstyle="danger", command=self.create_income_page).pack(pady=10)
 
     # ------------------------------------------------------------------
-    # Import Income CSV
+    # Import Income from CSV
     # ------------------------------------------------------------------
     def import_income_csv(self):
-        """Create the income import page."""
+        """
+        Create the income import page.
+
+        Features:
+            - File browser to select a CSV file.
+            - Imports selected file into the database.
+            - Displays status messages (success/error).
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -220,16 +234,13 @@ class IncomePages:
         import_frame = ttk.Frame(self.parent_frame, padding=20)
         import_frame.pack(fill="both", expand=True)
 
-        ttk.Label(
-            import_frame, text="Select CSV file to import your income"
-        ).pack(anchor="w", pady=5)
+        ttk.Label(import_frame, text="Select CSV file to import your income").pack(anchor="w", pady=5)
 
         selected_file = StringVar(value="No file selected")
-        ttk.Label(import_frame, textvariable=selected_file,
-                  foreground="blue").pack(anchor="w", pady=5)
+        ttk.Label(import_frame, textvariable=selected_file, foreground="blue").pack(anchor="w", pady=5)
 
         def open_file_dialog():
-            """Open file dialog for CSV selection."""
+            """Open file dialog to select a CSV file."""
             filepath = filedialog.askopenfilename(
                 title="Select CSV file",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
@@ -241,37 +252,31 @@ class IncomePages:
                 import_btn.filepath = filepath
 
         def import_csv():
-            """Import the selected CSV file into the database."""
+            """Import selected CSV file into income database."""
             filepath = getattr(import_btn, "filepath", None)
             if filepath:
-                success, message = self.finance_ops.import_income_from_csv(
-                    filepath, self.username
-                )
+                success, message = self.finance_ops.import_income_from_csv(filepath, self.username)
                 selected_file.set(message)
                 if success:
                     import_btn.config(state=DISABLED)
 
-        ttk.Button(
-            import_frame, text="Browse...", bootstyle="primary",
-            command=open_file_dialog
-        ).pack(pady=10)
-
-        import_btn = ttk.Button(
-            import_frame, text="Import", bootstyle="success",
-            command=import_csv, state=DISABLED
-        )
+        ttk.Button(import_frame, text="Browse...", bootstyle="primary", command=open_file_dialog).pack(pady=10)
+        import_btn = ttk.Button(import_frame, text="Import", bootstyle="success", command=import_csv, state=DISABLED)
         import_btn.pack(pady=5)
-
-        ttk.Button(
-            import_frame, text="Back to Income", bootstyle="danger",
-            command=self.create_income_page
-        ).pack(pady=10)
+        ttk.Button(import_frame, text="Back to Income", bootstyle="danger", command=self.create_income_page).pack(pady=10)
 
     # ------------------------------------------------------------------
     # View Income
     # ------------------------------------------------------------------
     def view_income_page(self):
-        """Display all recorded income entries."""
+        """
+        Display all recorded income in tabular format.
+
+        Features:
+            - Columns: ID, Date, Category, Amount, Description.
+            - Amounts formatted as USD currency.
+            - Back button to return to menu.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -282,18 +287,12 @@ class IncomePages:
 
         income = self.finance_ops.get_user_income(self.username)
         if not income:
-            ttk.Label(self.parent_frame, text="No Income to view.").pack(
-                pady=10)
-            ttk.Button(
-                self.parent_frame, text="Back to Income", bootstyle="danger",
-                command=self.create_income_page
-            ).pack(pady=5)
+            ttk.Label(self.parent_frame, text="No Income to view.").pack(pady=10)
+            ttk.Button(self.parent_frame, text="Back to Income", bootstyle="danger", command=self.create_income_page).pack(pady=5)
             return
 
         columns = ("ID", "Date", "Category", "Amount", "Description")
-        tree = ttk.Treeview(
-            self.parent_frame, columns=columns, show="headings", height=10
-        )
+        tree = ttk.Treeview(self.parent_frame, columns=columns, show="headings", height=10)
         tree.pack(pady=10, fill="x")
 
         for col in columns:
@@ -301,11 +300,10 @@ class IncomePages:
             tree.column(
                 col,
                 anchor="center" if col != "Description" else "w",
-                width=10 if col in ["ID", "Date", "Amount"]
-                else 25 if col == "Category" else 50
+                width=10 if col in ["ID", "Date", "Amount"] else 25 if col == "Category" else 50
             )
 
-        for inc in income:  # loop over all rows
+        for inc in income:
             inc_list = list(inc)
             try:
                 amount = float(inc_list[3])
@@ -314,16 +312,20 @@ class IncomePages:
                 pass
             tree.insert("", "end", values=inc_list)
 
-        ttk.Button(
-            self.parent_frame, text="Back to Income", bootstyle="danger",
-            command=self.create_income_page
-        ).pack(pady=5)
+        ttk.Button(self.parent_frame, text="Back to Income", bootstyle="danger", command=self.create_income_page).pack(pady=5)
 
     # ------------------------------------------------------------------
     # Remove Income
     # ------------------------------------------------------------------
     def remove_income_page(self):
-        """Display a page to remove selected income records."""
+        """
+        Display a page to remove selected income records.
+
+        Features:
+            - Shows all income records in a table.
+            - Allows selecting a record and confirming deletion.
+            - Deletes from both UI and database on success.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -334,18 +336,12 @@ class IncomePages:
 
         income = self.finance_ops.get_user_income(self.username)
         if not income:
-            ttk.Label(self.parent_frame, text="No Income to remove.").pack(
-                pady=10)
-            ttk.Button(
-                self.parent_frame, text="Back to Income", bootstyle="danger",
-                command=self.create_income_page
-            ).pack(pady=5)
+            ttk.Label(self.parent_frame, text="No Income to remove.").pack(pady=10)
+            ttk.Button(self.parent_frame, text="Back to Income", bootstyle="danger", command=self.create_income_page).pack(pady=5)
             return
 
         columns = ("ID", "Date", "Category", "Amount", "Description")
-        tree = ttk.Treeview(
-            self.parent_frame, columns=columns, show="headings", height=10
-        )
+        tree = ttk.Treeview(self.parent_frame, columns=columns, show="headings", height=10)
         tree.pack(pady=10, fill="x")
 
         for col in columns:
@@ -353,27 +349,24 @@ class IncomePages:
             tree.column(
                 col,
                 anchor="center" if col != "Description" else "w",
-                width=10 if col in ["ID", "Date", "Amount"]
-                else 25 if col == "Category" else 50
+                width=10 if col in ["ID", "Date", "Amount"] else 25 if col == "Category" else 50
             )
 
-        for inc in income:  # income is already sorted DESC by DB
+        for inc in income:
             tree.insert("", "end", values=inc)
 
         def delete_selected():
-            """Delete the selected income record."""
+            """Delete the selected income record from database."""
             selected = tree.selection()
             if not selected:
-                Messagebox.show_error("Please select an income to delete.",
-                                      "Error")
+                Messagebox.show_error("Please select an income to delete.", "Error")
                 return
 
             item = tree.item(selected[0])["values"]
             income_id = item[0]
 
             try:
-                amount_val = float(
-                    str(item[3]).replace("$", "").replace(",", ""))
+                amount_val = float(str(item[3]).replace("$", "").replace(",", ""))
             except ValueError:
                 amount_val = 0.0
 
@@ -392,15 +385,8 @@ class IncomePages:
             else:
                 Messagebox.show_error(message, "Error")
 
-        ttk.Button(
-            self.parent_frame, text="Delete Selected Income",
-            command=delete_selected, bootstyle="danger"
-        ).pack(pady=5)
-
-        ttk.Button(
-            self.parent_frame, text="Back to Income", bootstyle="danger",
-            command=self.create_income_page
-        ).pack(pady=5)
+        ttk.Button(self.parent_frame, text="Delete Selected Income", command=delete_selected, bootstyle="danger").pack(pady=5)
+        ttk.Button(self.parent_frame, text="Back to Income", bootstyle="danger", command=self.create_income_page).pack(pady=5)
 
     # ------------------------------------------------------------------
     # Helper Method

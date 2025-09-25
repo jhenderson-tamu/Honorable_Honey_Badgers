@@ -1,26 +1,31 @@
 # Personal Finance Application - Modular Version
 
-![Login Page](images/HHB_1.png)
-
-A comprehensive personal finance management application built with Python and ttkbootstrap GUI framework. 
-This modular version breaks down the original monolithic code into organized, maintainable modules.
+A comprehensive personal finance management application built with
+Python and ttkbootstrap GUI framework.\
+This modular version breaks down the original monolithic code into
+organized, maintainable modules.
 
 > **Recommended Python Version:** 3.10+ (tested on 3.11)
 
 ## Features
 
-- **User Authentication**: Secure user registration and login with password hashing
-- **Expense Management**: Add, view, edit, and delete expenses with categories
-- **Income Tracking**: Manage income sources with categorization
-- **Budget Overview**: Calculate budget summaries for custom date ranges
-- **Analytics**: Interactive charts for understanding expense and income trends
-- **CSV Import/Export**: Import financial data from CSV files
-- **Account Management**: Change passwords and view login history
-- **Multi-user Support**: Each user has their own isolated financial data
+-   **User Authentication**: Secure user registration and login with
+    password hashing\
+-   **Expense Management**: Add, view, edit, and delete expenses with
+    categories\
+-   **Income Tracking**: Manage income sources with categorization\
+-   **Budget Overview**: Calculate budget summaries for custom date
+    ranges\
+-   **Analytics**: Interactive charts for understanding expense and
+    income trends\
+-   **CSV Import/Export**: Import financial data from CSV files\
+-   **Account Management**: Change passwords and view login history\
+-   **Multi-user Support**: Each user has their own isolated financial
+    data
 
 ## Project Structure
 
-```plaintext
+``` plaintext
 Honorable_Honey_Badgers/
 ├── __init__.py
 ├── main.py                     # Application entry point
@@ -43,7 +48,7 @@ Honorable_Honey_Badgers/
 │   ├── budget_pages.py         # Budget overview & savings handling
 │   ├── expense_pages.py        # Expense management (CRUD, CSV import)
 │   ├── income_pages.py         # Income management (CRUD, CSV import)
-│   ├── report_pages.py         # Analytics/Reports menu
+│   ├── category_pages.py       # Category management (update/delete)
 │   └── main_app.py             # Main navigation frame
 │
 ├── analytics/                  # Reporting & visualization
@@ -53,166 +58,177 @@ Honorable_Honey_Badgers/
 │   ├── top_categories.py       # Top categories with date filter
 │   └── cash_flow.py            # Cash flow (Income vs Expenses line chart)
 │
-├── images/                     # Images & assets
-│   └── HHB_1.png               # Login page banner
-│
 └── operations/                 # Business logic & DB operations
     ├── __init__.py
-    ├── database.py             # Database setup
-    └── finance_operations.py   # CRUD, CSV import/export, budget summary
+    ├── database.py             # Database setup & authentication
+    ├── finance_operations.py   # CRUD, CSV import/export, budget summary
+    └── reports.py              # Data access helpers for analytics
 ```
 
 ## Installation
 
-1. **Clone or download the project files**
+1.  **Clone or download the project files**
 
-2. **Install required dependencies:**
+2.  **Install required dependencies:**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ``` bash
+    pip install -r requirements.txt
+    ```
 
-3. **Run the application:**
+3.  **Run the application:**
 
-   * **From Command Line:**
+    -   **From Command Line:**
 
-     ```bash
-     python main.py
-     ```
-   * **From Python IDLE:**
+        ``` bash
+        python main.py
+        ```
 
-     1. Open IDLE (Python GUI)
-     2. Go to **File → Open...** and select `main.py`
-     3. Click **Run → Run Module** (or press **F5**) to start the application
+    -   **From Python IDLE:**
+
+        1.  Open IDLE (Python GUI)\
+        2.  Go to **File → Open...** and select `main.py`\
+        3.  Click **Run → Run Module** (or press **F5**) to start the
+            application
 
 ## Module Descriptions
 
 ### `database.py`
-Handles all database operations including:
-- User database setup (authentication, login history)
-- Finance database setup (expenses, income, categories)
-- User registration and authentication functions
-- Login history tracking
+
+-   Sets up `users.db` (user authentication, login history)\
+-   Sets up `finance.db` (expenses, income, categories)\
+-   Handles registration, authentication, and login history tracking
 
 ### `finance_operations.py`
-Contains the `FinanceOperations` class that manages:
-- Adding/loading expense and income categories
-- Adding expenses and income entries
-- Retrieving user financial data
-- CSV import functionality
-- Budget calculations
+
+-   Manages categories, expenses, and income\
+-   CRUD operations (create, read, update, delete)\
+-   CSV import (expenses and income)\
+-   Budget summaries and calculations
+
+### `reports.py`
+
+-   Provides database access for analytics\
+-   Expense and income retrieval by category or date range\
+-   Generates monthly aggregated data for charts
 
 ### `auth.py`
-Contains the `AuthWindow` class for user authentication:
-- Login/registration GUI
-- Password validation
-- Session management
+
+-   Handles user login and registration GUI\
+-   Validates credentials\
+-   Starts the main app after login
 
 ### `expense_pages.py`
-Contains the `ExpensePages` class managing:
-- Expense entry forms
-- Expense viewing and deletion
-- CSV import interface
-- Category management
+
+-   Manual expense entry form\
+-   Expense import from CSV\
+-   View and remove expenses\
+-   Category management
 
 ### `income_pages.py`
-Contains the `IncomePages` class managing:
-- Income entry forms
-- Income viewing and deletion
-- CSV import interface
-- Income category management
+
+-   Manual income entry form\
+-   Income import from CSV\
+-   View and remove income\
+-   Income category management
 
 ### `budget_pages.py`
-Contains the `BudgetPages` class for:
-- Budget overview calculations
-- Date range selection
-- Financial summaries
+
+-   Budget overview calculations\
+-   Date range selection\
+-   Displays totals, income, expenses, savings
 
 ### `account_pages.py`
-Contains the `AccountPages` class for:
-- Password change functionality
-- Login history display
-- Account management
+
+-   Change password interface\
+-   View login history\
+-   Account management options
+
+### `category_pages.py`
+
+-   Manage categories for both expenses and income\
+-   Update, rename, or delete with reassignment handling
 
 ### `main_app.py`
-Contains the `MainApp` class that:
-- Creates the main application window
-- Manages navigation between different sections
-- Coordinates all page modules
+
+-   Builds main window after login\
+-   Sidebar navigation for all modules\
+-   Handles logout and page switching
+
+### `analytics/`
+
+-   **category.py**: Expenses by category pie chart\
+-   **monthly.py**: Monthly expenses bar chart\
+-   **top_categories.py**: Top categories ranked by amount\
+-   **cash_flow.py**: Cash flow line chart (Income vs Expenses vs Net)
 
 ### `main.py`
-The application entry point that:
-- Initializes databases
-- Starts the authentication window
-- Coordinates the application flow
+
+-   Initializes databases\
+-   Starts authentication\
+-   Launches main app
 
 ## Usage
 
 ### First Time Setup
-1. Run the application with `python main.py`
-2. Click "Register" to create a new user account
-3. Enter a username and password
-4. Click "Login" to access the main application
 
-### Managing Expenses
-1. Click "Expenses" in the sidebar
-2. Choose from manual entry, CSV import, viewing, or removing expenses
-3. For manual entry, fill in all required fields and select/create categories
-4. Use the date picker for accurate date selection
+1.  Run the app with `python main.py`\
+2.  Register a new user\
+3.  Login to access the main menu
 
-### Managing Income
-1. Click "Income" in the sidebar
-2. Similar workflow to expenses with income-specific categories
-3. Track different income sources (salary, investments, etc.)
+### Expenses & Income
+
+-   Add manually or import via CSV\
+-   View or delete existing records\
+-   Manage categories
 
 ### Budget Overview
-1. Click "Budget" in the sidebar
-2. Select start and end dates for your budget period
-3. Click "Calculate Budget" to see totals and savings
+
+-   Choose a start and end date\
+-   View totals, income, expenses, and net savings
+
+### Analytics
+
+-   Pie chart of expenses by category\
+-   Bar chart of monthly expenses\
+-   Bar chart of top categories\
+-   Line chart for cash flow
 
 ### CSV Import Format
-Both expense and income CSV files should have these columns:
-- `date` (YYYY-MM-DD format)
-- `category` (text)
-- `amount` (numeric)
-- `description` (optional, text)
+
+Both **expense** and **income** CSV files must include:\
+- `date` (YYYY-MM-DD)\
+- `category` (string)\
+- `amount` (numeric)\
+- `description` (optional)
 
 ## Database Files
-The application creates two SQLite database files:
-- `users.db`: Stores user accounts and login history
-- `finance.db`: Stores financial data (expenses, income, categories)
+
+-   `users.db`: Accounts and login history\
+-   `finance.db`: Expenses, income, categories
 
 ## Security Features
-- Passwords are hashed using bcrypt with salt
-- User data is isolated per account
-- Session-based authentication
 
-## Customization
-- Add new expense/income categories through the GUI
-- Modify themes by changing the `themename` parameter in window creation
-- Extend functionality by adding new page modules
+-   Passwords hashed with bcrypt\
+-   Isolated user data\
+-   Session-based authentication
 
 ## Dependencies
-- **pandas**: For CSV file processing
-- **bcrypt**: For secure password hashing
-- **ttkbootstrap**: For modern GUI components
+
+-   **pandas**: Data manipulation\
+-   **bcrypt**: Password hashing\
+-   **ttkbootstrap**: GUI framework\
+-   **matplotlib**: Charts & visualizations
 
 ## Troubleshooting
 
-### Common Issues
-1. **Import Error**: Make sure all dependencies are installed via `pip install -r requirements.txt`
-2. **Database Errors**: Delete existing `.db` files to reset the database
-3. **GUI Issues**: Ensure ttkbootstrap is properly installed
-
-### Development Notes
-- Each module is designed to be independent and reusable
-- The original monolithic structure has been preserved in functionality
-- Error handling has been centralized in the operations classes
-- GUI components are separated from business logic
+1.  **Missing imports**: Install dependencies with
+    `pip install -r requirements.txt`\
+2.  **Database errors**: Delete `.db` files to reset\
+3.  **GUI issues**: Ensure `ttkbootstrap` is installed
 
 ## Future Enhancements
-- Add reporting and visualization features
-- Implement data export functionality
-- Add recurring transaction support
-- Create backup/restore functionality
-- Add transaction search and filtering
+
+-   Recurring transactions\
+-   Search and filtering\
+-   Data export\
+-   Backup/restore

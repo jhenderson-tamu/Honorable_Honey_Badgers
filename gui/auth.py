@@ -1,12 +1,18 @@
 # PROGRAM: Authentication Window
 # PURPOSE: Provide a login and registration interface for users before
-# granting access to the main application.
-# INPUT: Username and password entered by the user.
-# PROCESS: Authenticates the user or registers a new one, logs actions,
-# and calls the main application callback on successful login.
-# OUTPUT: Authenticated session or registration status message.
+#          granting access to the main application.
+# INPUT:
+#   - Username (str) entered by the user.
+#   - Password (str) entered by the user.
+# PROCESS:
+#   - Authenticates users with stored credentials or registers new accounts.
+#   - Logs successful authentication actions.
+#   - On successful login, launches the main application callback.
+# OUTPUT:
+#   - Authenticated session on successful login.
+#   - Registration confirmation or error message on failed attempts.
 # HONOR CODE: On my honor, as an Aggie, I have neither given nor
-# received unauthorized aid on this academic work.
+#             received unauthorized aid on this academic work.
 
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import YES
@@ -25,8 +31,8 @@ class AuthWindow:
         Initialize the authentication window.
 
         Args:
-            main_app_callback (callable): Function to call on successful
-                login, passing the authenticated username.
+            main_app_callback (callable): Function to call upon
+                successful login, passing the authenticated username.
         """
         self.main_app_callback = main_app_callback
         self.login = ttk.Window(themename="solar")
@@ -35,8 +41,19 @@ class AuthWindow:
 
         self.setup_ui()
 
+    # ------------------------------------------------------------------
+    # UI Setup
+    # ------------------------------------------------------------------
     def setup_ui(self):
-        """Configure and display the authentication user interface."""
+        """
+        Configure and display the authentication user interface.
+
+        Features:
+            - Displays app logo if available.
+            - Provides fields for username and password entry.
+            - Buttons for Login and Register actions.
+            - Feedback label for error or success messages.
+        """
         # Attempt to display image at top of window
         image_path = "images/HHB_1.png"
         try:
@@ -91,8 +108,19 @@ class AuthWindow:
         # Bind Enter key to trigger login
         self.login.bind("<Return>", lambda event: self.login_user())
 
+    # ------------------------------------------------------------------
+    # Authentication Logic
+    # ------------------------------------------------------------------
     def register_user(self):
-        """Register a new user and display the result."""
+        """
+        Register a new user and update feedback label.
+
+        Workflow:
+            - Collects username and password from input fields.
+            - Calls `register_user` to store new credentials.
+            - Updates label with result message.
+            - Clears password entry for security.
+        """
         username = self.username_entry.get()
         password = self.password_entry.get()
 
@@ -103,7 +131,19 @@ class AuthWindow:
         self.password_entry.delete(0, "end")
 
     def login_user(self):
-        """Authenticate the user and open the main application on success."""
+        """
+        Authenticate the user and proceed on success.
+
+        Workflow:
+            - Validates credentials using `authenticate_user`.
+            - On success:
+                - Logs login action.
+                - Closes login window.
+                - Calls `main_app_callback` with username.
+            - On failure:
+                - Displays error message.
+                - Clears password entry.
+        """
         username = self.username_entry.get()
         password = self.password_entry.get()
 
@@ -117,8 +157,11 @@ class AuthWindow:
             self.label_var.set(message)
             self.password_entry.delete(0, "end")
 
+    # ------------------------------------------------------------------
+    # Window Control
+    # ------------------------------------------------------------------
     def close_login(self):
-        """Close the login window."""
+        """Close the authentication window."""
         self.login.destroy()
 
     def run(self):

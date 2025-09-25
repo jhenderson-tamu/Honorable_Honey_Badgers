@@ -1,14 +1,25 @@
 # PROGRAM: Expense Management Pages
-# PURPOSE: Provide pages for adding, importing, viewing, and removing
-# user expenses, including category management.
-# INPUT: Username of the logged-in user and the parent frame for display.
-# PROCESS: Creates GUI pages to manage expenses, interact with
-# FinanceOperations to store/retrieve data, and updates the interface
-# dynamically.
-# OUTPUT: User-entered expenses saved to database, displayed expense
-# tables, or success/error messages in the GUI.
+# PURPOSE: Provide a full set of GUI pages for managing expenses,
+#          including adding, importing, viewing, and removing user
+#          expenses, along with category management.
+# INPUT:
+#   - username (str): Username of the logged-in user.
+#   - parent_frame (tk.Frame): The frame container where expense pages
+#     will be displayed.
+# PROCESS:
+#   - Builds GUI pages to allow expense management.
+#   - Supports manual entry of expenses with category selection or creation.
+#   - Allows importing expenses from CSV files.
+#   - Displays all recorded expenses in a table with formatted values.
+#   - Allows deleting individual expense records with confirmation.
+#   - Interacts with FinanceOperations for all database transactions.
+# OUTPUT:
+#   - User-entered expenses saved to the database.
+#   - Imported expenses added from CSV files.
+#   - Expense tables displayed in the GUI.
+#   - Success or error messages shown in the interface.
 # HONOR CODE: On my honor, as an Aggie, I have neither given nor
-# received unauthorized aid on this academic work.
+#             received unauthorized aid on this academic work.
 
 import tkinter as tk
 import ttkbootstrap as ttk
@@ -29,7 +40,7 @@ class ExpensePages:
 
         Args:
             username (str): Username of the logged-in user.
-            parent_frame: The frame where expense pages will be displayed.
+            parent_frame (tk.Frame): Frame where expense pages will be displayed.
         """
         self.username = username
         self.parent_frame = parent_frame
@@ -39,7 +50,15 @@ class ExpensePages:
     # Main Expense Menu
     # ------------------------------------------------------------------
     def create_expenses_page(self):
-        """Create the main expenses menu with available options."""
+        """
+        Build and display the main expenses menu.
+
+        Features:
+            - Manual entry of expenses.
+            - Importing expenses from CSV.
+            - Viewing all expenses in a table.
+            - Removing selected expenses.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -85,7 +104,15 @@ class ExpensePages:
     # Expense Entry Page
     # ------------------------------------------------------------------
     def expense_entry_page(self):
-        """Create the manual expense entry page."""
+        """
+        Create the manual expense entry page.
+
+        Features:
+            - Input fields for description, amount, date, and category.
+            - Category dropdown with option to add a new category.
+            - Buttons to add category, save expense, or go back.
+            - Validation for required fields and amount format.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -135,15 +162,13 @@ class ExpensePages:
 
         # --- Helper Functions ---
         def show_notification(message, type="info"):
-            """Show a notification message for a few seconds."""
+            """Show a notification message for 3 seconds."""
             color = {"info": "green", "error": "red"}.get(type, "black")
             notification_label.config(text=message, foreground=color)
-            notification_label.after(
-                3000, lambda: notification_label.config(text="")
-            )
+            notification_label.after(3000, lambda: notification_label.config(text=""))
 
         def add_category():
-            """Add a new expense category to the database."""
+            """Add a new expense category and update dropdown list."""
             new_cat = new_category_entry.get().strip()
             if not new_cat:
                 show_notification("Category name cannot be empty.", "error")
@@ -154,9 +179,7 @@ class ExpensePages:
 
             if success:
                 new_category_entry.delete(0, "end")
-                category_menu.config(
-                    values=self.finance_ops.load_expense_categories()
-                )
+                category_menu.config(values=self.finance_ops.load_expense_categories())
                 category_var.set(new_cat)
 
         def save_expense():
@@ -193,24 +216,22 @@ class ExpensePages:
                 date_entry.set_date(datetime.today())
 
         # --- Buttons ---
-        ttk.Button(
-            form_frame, text="Add Category", bootstyle="info",
-            command=add_category
-        ).pack(pady=5)
-        ttk.Button(
-            form_frame, text="Save Expense", bootstyle="success",
-            command=save_expense
-        ).pack(pady=15)
-        ttk.Button(
-            form_frame, text="Back to Expenses", bootstyle="danger",
-            command=self.create_expenses_page
-        ).pack(pady=5)
+        ttk.Button(form_frame, text="Add Category", bootstyle="info", command=add_category).pack(pady=5)
+        ttk.Button(form_frame, text="Save Expense", bootstyle="success", command=save_expense).pack(pady=15)
+        ttk.Button(form_frame, text="Back to Expenses", bootstyle="danger", command=self.create_expenses_page).pack(pady=5)
 
     # ------------------------------------------------------------------
     # Import Expenses from CSV
     # ------------------------------------------------------------------
     def import_expenses_csv(self):
-        """Create the expense import page."""
+        """
+        Create the expense import page.
+
+        Features:
+            - File browser to select CSV file.
+            - Imports expense records into the database.
+            - Displays success or error messages after import.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -222,14 +243,10 @@ class ExpensePages:
         import_frame = ttk.Frame(self.parent_frame, padding=20)
         import_frame.pack(fill="both", expand=True)
 
-        ttk.Label(
-            import_frame,
-            text="Select CSV file to import your expenses"
-        ).pack(anchor="w", pady=5)
+        ttk.Label(import_frame, text="Select CSV file to import your expenses").pack(anchor="w", pady=5)
 
         selected_file = StringVar(value="No file selected")
-        ttk.Label(import_frame, textvariable=selected_file,
-                  foreground="blue").pack(anchor="w", pady=5)
+        ttk.Label(import_frame, textvariable=selected_file, foreground="blue").pack(anchor="w", pady=5)
 
         def open_file_dialog():
             """Open a file dialog to select CSV file."""
@@ -247,32 +264,28 @@ class ExpensePages:
             """Import selected CSV file into expenses database."""
             filepath = getattr(import_btn, "filepath", None)
             if filepath:
-                success, message = self.finance_ops.import_expenses_from_csv(
-                    filepath, self.username
-                )
+                success, message = self.finance_ops.import_expenses_from_csv(filepath, self.username)
                 selected_file.set(message)
                 if success:
                     import_btn.config(state=DISABLED)
 
-        ttk.Button(
-            import_frame, text="Browse...", bootstyle="primary",
-            command=open_file_dialog
-        ).pack(pady=10)
-        import_btn = ttk.Button(
-            import_frame, text="Import", bootstyle="success",
-            command=import_csv, state=DISABLED
-        )
+        ttk.Button(import_frame, text="Browse...", bootstyle="primary", command=open_file_dialog).pack(pady=10)
+        import_btn = ttk.Button(import_frame, text="Import", bootstyle="success", command=import_csv, state=DISABLED)
         import_btn.pack(pady=5)
-        ttk.Button(
-            import_frame, text="Back to Expenses", bootstyle="danger",
-            command=self.create_expenses_page
-        ).pack(pady=10)
+        ttk.Button(import_frame, text="Back to Expenses", bootstyle="danger", command=self.create_expenses_page).pack(pady=10)
 
     # ------------------------------------------------------------------
     # View Expenses
     # ------------------------------------------------------------------
     def view_expenses_page(self):
-        """Display all recorded expenses."""
+        """
+        Display all recorded expenses in a tabular format.
+
+        Features:
+            - Shows columns: ID, Date, Category, Amount, Description.
+            - Formats amount as currency.
+            - Provides a back button to return to menu.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -284,16 +297,11 @@ class ExpensePages:
         expenses = self.finance_ops.get_user_expenses(self.username)
         if not expenses:
             ttk.Label(self.parent_frame, text="No Expenses to view.").pack(pady=10)
-            ttk.Button(
-                self.parent_frame, text="Back to Expenses", bootstyle="danger",
-                command=self.create_expenses_page
-            ).pack(pady=5)
+            ttk.Button(self.parent_frame, text="Back to Expenses", bootstyle="danger", command=self.create_expenses_page).pack(pady=5)
             return
 
         columns = ("ID", "Date", "Category", "Amount", "Description")
-        tree = ttk.Treeview(
-            self.parent_frame, columns=columns, show="headings", height=10
-        )
+        tree = ttk.Treeview(self.parent_frame, columns=columns, show="headings", height=10)
         tree.pack(pady=10, fill="x")
 
         for col in columns:
@@ -301,30 +309,32 @@ class ExpensePages:
             tree.column(
                 col,
                 anchor="center" if col != "Description" else "w",
-                width=10 if col in ["ID", "Date", "Amount"]
-                else 25 if col == "Category" else 50
+                width=10 if col in ["ID", "Date", "Amount"] else 25 if col == "Category" else 50
             )
 
         for exp in expenses:
             exp_list = list(exp)
-            # Format amount as currency
             try:
                 amount = float(exp_list[3])
                 exp_list[3] = f"${amount:,.2f}"
             except (ValueError, IndexError):
                 pass
+            tree.insert("", "end", values=exp_list)
 
-            tree.insert("", "end", values=exp_list)  # now inside loop
-
-        ttk.Button(
-            self.parent_frame, text="Back to Expenses", bootstyle="danger",
-            command=self.create_expenses_page).pack(pady=5)
+        ttk.Button(self.parent_frame, text="Back to Expenses", bootstyle="danger", command=self.create_expenses_page).pack(pady=5)
 
     # ------------------------------------------------------------------
     # Remove Expenses
     # ------------------------------------------------------------------
     def remove_expenses_page(self):
-        """Display a page to remove selected expenses."""
+        """
+        Display a page to remove selected expenses.
+
+        Features:
+            - Shows all expenses in a table.
+            - Allows selecting a record and deleting it from the database.
+            - Confirmation dialog before deletion.
+        """
         self._clear_parent_frame()
 
         ttk.Label(
@@ -336,16 +346,11 @@ class ExpensePages:
         expenses = self.finance_ops.get_user_expenses(self.username)
         if not expenses:
             ttk.Label(self.parent_frame, text="No expenses to remove.").pack(pady=10)
-            ttk.Button(
-                self.parent_frame, text="Back to Expenses", bootstyle="danger",
-                command=self.create_expenses_page
-            ).pack(pady=5)
+            ttk.Button(self.parent_frame, text="Back to Expenses", bootstyle="danger", command=self.create_expenses_page).pack(pady=5)
             return
 
         columns = ("ID", "Date", "Category", "Amount", "Description")
-        tree = ttk.Treeview(
-            self.parent_frame, columns=columns, show="headings", height=10
-        )
+        tree = ttk.Treeview(self.parent_frame, columns=columns, show="headings", height=10)
         tree.pack(pady=10, fill="x")
 
         for col in columns:
@@ -353,15 +358,14 @@ class ExpensePages:
             tree.column(
                 col,
                 anchor="center" if col != "Description" else "w",
-                width=10 if col in ["ID", "Date", "Amount"]
-                else 25 if col == "Category" else 50
+                width=10 if col in ["ID", "Date", "Amount"] else 25 if col == "Category" else 50
             )
 
         for exp in expenses:
             tree.insert("", "end", values=exp)
 
         def delete_selected():
-            """Delete the selected expense from database and tree."""
+            """Delete the selected expense from the database and refresh UI."""
             selected = tree.selection()
             if not selected:
                 Messagebox.show_error("Please select an expense to delete.", "Error")
@@ -383,14 +387,8 @@ class ExpensePages:
             else:
                 Messagebox.show_error(message, "Error")
 
-        ttk.Button(
-            self.parent_frame, text="Delete Selected Expense",
-            command=delete_selected, bootstyle="danger"
-        ).pack(pady=5)
-        ttk.Button(
-            self.parent_frame, text="Back to Expenses", bootstyle="danger",
-            command=self.create_expenses_page
-        ).pack(pady=5)
+        ttk.Button(self.parent_frame, text="Delete Selected Expense", command=delete_selected, bootstyle="danger").pack(pady=5)
+        ttk.Button(self.parent_frame, text="Back to Expenses", bootstyle="danger", command=self.create_expenses_page).pack(pady=5)
 
     # ------------------------------------------------------------------
     # Helper Method
