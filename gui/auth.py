@@ -340,3 +340,4 @@ class AuthWindow:
     def run(self):
         """Run the login window event loop."""
         self.login.mainloop()
+
