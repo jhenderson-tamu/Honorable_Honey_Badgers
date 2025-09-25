@@ -20,21 +20,28 @@ class CategoryReport:
         for w in self.parent.winfo_children():
             w.destroy()
 
-        # get all expenses (used for min/max date)
-        all_expenses = reports.get_user_expenses_range(
-            self.username, "01/01/1900", "12/31/2999"
-        )
-
         frame = ttk.Frame(self.parent)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # default date range
+        # --- Default to last month with data ---
+        all_expenses = reports.get_user_expenses_range(
+            self.username, "1900-01-01", "2999-12-31"
+        )
+
         if not all_expenses.empty:
-            min_date = all_expenses["date"].min().date()
-            max_date = all_expenses["date"].max().date()
+            # Use the most recent date with data
+            last_date = all_expenses["date"].max().date()
+            first_day = last_date.replace(day=1)
+            next_month = (last_date.replace(day=28) + pd.Timedelta(days=4)).replace(day=1)
+            last_day = next_month - pd.Timedelta(days=1)
         else:
+            # Fall back to current month if no data
             today = pd.Timestamp.today().date()
-            min_date = max_date = today
+            first_day = today.replace(day=1)
+            next_month = (today.replace(day=28) + pd.Timedelta(days=4)).replace(day=1)
+            last_day = next_month - pd.Timedelta(days=1)
+
+        min_date, max_date = first_day, last_day
 
         # date pickers
         ttk.Label(frame, text="Start Date:").grid(row=0, column=0, padx=5, pady=5)

@@ -20,19 +20,26 @@ class MonthlyReport:
         for w in self.parent.winfo_children():
             w.destroy()
 
-        all_expenses = reports.get_user_expenses_range(
-            self.username, "01/01/1900", "12/31/2999"
-        )
-
         frame = ttk.Frame(self.parent)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
 
+        # --- Default to last month with data ---
+        all_expenses = reports.get_user_expenses_range(
+            self.username, "1900-01-01", "2999-12-31"
+        )
+
         if not all_expenses.empty:
-            min_date = all_expenses["date"].min().date()
-            max_date = all_expenses["date"].max().date()
+            last_date = all_expenses["date"].max().date()
+            first_day = last_date.replace(day=1)
+            next_month = (last_date.replace(day=28) + pd.Timedelta(days=4)).replace(day=1)
+            last_day = next_month - pd.Timedelta(days=1)
         else:
             today = pd.Timestamp.today().date()
-            min_date = max_date = today
+            first_day = today.replace(day=1)
+            next_month = (today.replace(day=28) + pd.Timedelta(days=4)).replace(day=1)
+            last_day = next_month - pd.Timedelta(days=1)
+
+        min_date, max_date = first_day, last_day
 
         # Date pickers
         ttk.Label(frame, text="Start Date:").grid(row=0, column=0, padx=5, pady=5)
@@ -88,7 +95,6 @@ class MonthlyReport:
                 ax.set_ylabel("Amount ($)")
                 fig.tight_layout()
 
-                # Format y-axis as dollars
                 ax.yaxis.set_major_formatter(StrMethodFormatter("${x:,.2f}"))
 
                 canvas = FigureCanvasTkAgg(fig, master=chart_frame)
@@ -104,7 +110,6 @@ class MonthlyReport:
 
                 fig.canvas.mpl_connect("pick_event", on_pick)
 
-                # Export chart button
                 def export_chart():
                     filepath = filedialog.asksaveasfilename(
                         defaultextension=".png",
@@ -122,17 +127,14 @@ class MonthlyReport:
                 ttk.Button(chart_frame, text="Export Chart as PNG",
                            bootstyle="info", command=export_chart).pack(pady=10)
 
-                # Back button
                 ttk.Button(
                     frame, text="Back",
                     bootstyle="secondary", width=20,
                     command=self.back_callback
                 ).grid(row=3, column=0, columnspan=5, pady=10)
 
-        # Bindings
         start_date.bind("<<DateEntrySelected>>", refresh_report)
         end_date.bind("<<DateEntrySelected>>", refresh_report)
         total_label.bind("<Button-1>", show_all_details)
 
-        # Initial load
         refresh_report()

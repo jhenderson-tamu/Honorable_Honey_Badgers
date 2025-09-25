@@ -18,6 +18,7 @@ from gui.income_pages import IncomePages
 from gui.budget_pages import BudgetPages
 from gui.account_pages import AccountPages
 from analytics.analytics_pages import AnalyticPages
+from gui.category_pages import CategoryManager
 
 class MainApp:
     """Main application class to build and manage the GUI."""
@@ -69,6 +70,8 @@ class MainApp:
         # Initialize page objects
         self.expense_pages = ExpensePages(self.username, self.content_frame)
         self.income_pages = IncomePages(self.username, self.content_frame)
+        self.category_pages = CategoryManager(self.content_frame,
+                                              self._clear_content_frame)
         self.budget_pages = BudgetPages(self.username, self.content_frame)
         self.account_pages = AccountPages(self.username, self.content_frame)
         self.analytic_pages = AnalyticPages(self.username, self.content_frame)
@@ -82,6 +85,7 @@ class MainApp:
             ("Expenses", self.show_expenses),
             ("Income", self.show_income),
             ("Budget", self.show_budget),
+            ("Category", self.show_categories),
             ("Analytics", self.show_analytics),
             ("Manage Account", self.show_account),
         ]
@@ -119,6 +123,11 @@ class MainApp:
         """Display the income page."""
         self._clear_content_frame()
         self.income_pages.create_income_page()
+
+    def show_categories(self):
+        """Display the manage categories page."""
+        self._clear_content_frame()
+        self.category_pages.create_category_page()
 
     def show_budget(self):
         """Display the budget page."""

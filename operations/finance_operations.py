@@ -13,7 +13,7 @@
 
 import sqlite3 as sql
 import pandas as pd
-
+from datetime import datetime
 
 class FinanceOperations:
     """Class to handle all finance-related database operations."""
@@ -162,49 +162,29 @@ class FinanceOperations:
 
     @staticmethod
     def get_user_expenses(username: str):
+        """Fetch all expenses for a user, sorted by date descending."""
         import sqlite3 as sql
         with sql.connect("data/finance.db") as conn:
             c = conn.cursor()
             c.execute("""
                 SELECT id, date, category, amount, description
-                FROM (
-                    SELECT
-                        id, date, category, amount, description,
-                        substr(trim(date), 1, 10) AS d,
-                        instr(substr(trim(date), 1, 10), '/') AS p1,
-                        instr(substr(substr(trim(date), 1, 10),
-                                     instr(substr(trim(date), 1, 10), '/') + 1), '/') + instr(substr(trim(date), 1, 10), '/') AS p2
-                    FROM expenses
-                    WHERE username = ?
-                )
-                ORDER BY
-                    CAST(substr(d, p2 + 1) AS INT) DESC,    -- Year
-                    CAST(substr(d, 1, p1 - 1) AS INT) DESC, -- Month
-                    CAST(substr(d, p1 + 1, p2 - p1 - 1) AS INT) DESC -- Day
+                FROM expenses
+                WHERE username = ?
+                ORDER BY date DESC
             """, (username,))
             return c.fetchall()
 
     @staticmethod
     def get_user_income(username: str):
+        """Fetch all income records for a user, sorted by date descending."""
         import sqlite3 as sql
         with sql.connect("data/finance.db") as conn:
             c = conn.cursor()
             c.execute("""
                 SELECT id, date, category, amount, description
-                FROM (
-                    SELECT
-                        id, date, category, amount, description,
-                        substr(trim(date), 1, 10) AS d,
-                        instr(substr(trim(date), 1, 10), '/') AS p1,
-                        instr(substr(substr(trim(date), 1, 10),
-                                     instr(substr(trim(date), 1, 10), '/') + 1), '/') + instr(substr(trim(date), 1, 10), '/') AS p2
-                    FROM income
-                    WHERE username = ?
-                )
-                ORDER BY
-                    CAST(substr(d, p2 + 1) AS INT) DESC,    -- Year
-                    CAST(substr(d, 1, p1 - 1) AS INT) DESC, -- Month
-                    CAST(substr(d, p1 + 1, p2 - p1 - 1) AS INT) DESC -- Day
+                FROM income
+                WHERE username = ?
+                ORDER BY date DESC
             """, (username,))
             return c.fetchall()
 
@@ -273,51 +253,71 @@ class FinanceOperations:
             if not required_cols.issubset(df.columns):
                 return False, "CSV is missing required columns (date, category, amount)."
 
+            skipped_rows = 0
             new_categories = set()
 
             with sql.connect("data/finance.db") as conn:
                 cursor = conn.cursor()
 
                 for _, row in df.iterrows():
-                    date = str(row["date"]).strip()
-                    category = str(row["category"]).strip()
+                    # --- Normalize date ---
+                    raw_date = str(row["date"]).strip()
+                    date = FinanceOperations.normalize_date(raw_date)
+                    if not date:
+                        skipped_rows += 1
+                        continue  # skip invalid dates
+
+                    # --- Category (default to Uncategorized if blank) ---
+                    category = str(row.get("category", "")).strip()
+                    if not category:
+                        category = "Uncategorized"
+
                     amount = float(row["amount"])
                     description = str(row.get("description", "")).strip()
 
                     # --- Ensure category exists ---
                     cursor.execute(
                         "SELECT id FROM expense_category WHERE name = ?",
-                        (category,))
+                        (category,)
+                    )
                     if cursor.fetchone() is None:
                         try:
                             cursor.execute(
                                 "INSERT INTO expense_category (name) VALUES (?)",
-                                (category,))
+                                (category,)
+                            )
                             new_categories.add(category)
                         except sql.IntegrityError:
-                            pass  # ignore race condition if inserted in parallel
+                            pass
 
                     # --- Insert expense ---
                     cursor.execute("""
-                           INSERT INTO expenses (date, category, amount, description, username)
-                           VALUES (?, ?, ?, ?, ?)
-                       """, (date, category, amount, description, username))
+                        INSERT INTO expenses (date, category, amount, description, username)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (date, category, amount, description, username))
 
                 conn.commit()
 
-            # Build success message
+            # Build message
+            msg_parts = ["File imported successfully!"]
             if new_categories:
-                return True, f"File imported successfully! Added new categories: {', '.join(sorted(new_categories))}."
-            else:
-                return True, "File imported successfully! No new categories added."
+                msg_parts.append(
+                    f"Added new categories: {', '.join(sorted(new_categories))}.")
+            if skipped_rows > 0:
+                msg_parts.append(
+                    f"Skipped {skipped_rows} row(s) with invalid dates.")
+
+            return True, " ".join(msg_parts)
 
         except Exception as e:
             return False, f"Error importing file: {e}"
 
     @staticmethod
-    def import_income_from_csv(filepath: str, username: str) -> tuple[bool, str]:
+    def import_income_from_csv(filepath: str, username: str) -> tuple[
+        bool, str]:
         """
-        Import income records from a CSV file.
+        Import income records from a CSV file, automatically adding
+        new categories to the income_category table.
 
         Args:
             filepath (str): Path to the CSV file.
@@ -333,23 +333,78 @@ class FinanceOperations:
             if not required_cols.issubset(df.columns):
                 return False, "CSV is missing required columns (date, category, amount)."
 
+            skipped_rows = 0
+            new_categories = set()
+
             with sql.connect("data/finance.db") as conn:
                 cursor = conn.cursor()
+
                 for _, row in df.iterrows():
+                    # --- Normalize date ---
+                    raw_date = str(row["date"]).strip()
+                    date = FinanceOperations.normalize_date(raw_date)
+                    if not date:
+                        skipped_rows += 1
+                        continue  # skip invalid dates
+
+                    # --- Category (default to Uncategorized if blank) ---
+                    category = str(row.get("category", "")).strip()
+                    if not category:
+                        category = "Uncategorized"
+
+                    amount = float(row["amount"])
+                    description = str(row.get("description", "")).strip()
+
+                    # --- Ensure category exists ---
+                    cursor.execute(
+                        "SELECT id FROM income_category WHERE name = ?",
+                        (category,)
+                    )
+                    if cursor.fetchone() is None:
+                        try:
+                            cursor.execute(
+                                "INSERT INTO income_category (name) VALUES (?)",
+                                (category,)
+                            )
+                            new_categories.add(category)
+                        except sql.IntegrityError:
+                            pass
+
+                    # --- Insert income ---
                     cursor.execute("""
                         INSERT INTO income (date, category, amount, description, username)
                         VALUES (?, ?, ?, ?, ?)
-                    """, (
-                        row["date"],
-                        row["category"],
-                        float(row["amount"]),
-                        row.get("description", ""),
-                        username
-                    ))
+                    """, (date, category, amount, description, username))
+
                 conn.commit()
-            return True, "File imported successfully!"
+
+            # Build message
+            msg_parts = ["File imported successfully!"]
+            if new_categories:
+                msg_parts.append(
+                    f"Added new categories: {', '.join(sorted(new_categories))}.")
+            if skipped_rows > 0:
+                msg_parts.append(
+                    f"Skipped {skipped_rows} row(s) with invalid dates.")
+
+            return True, " ".join(msg_parts)
+
         except Exception as e:
             return False, f"Error importing file: {e}"
+
+    @staticmethod
+    def normalize_date(date_str: str) -> str | None:
+        """
+        Normalize dates to YYYY-MM-DD format.
+        Returns None if the date cannot be parsed.
+        """
+        try:
+            parsed = pd.to_datetime(date_str, errors="coerce")
+            if pd.notna(parsed):
+                return parsed.strftime("%Y-%m-%d")
+        except Exception:
+            return None
+        return None
 
     # ------------------------------
     # Budget Summary
@@ -403,3 +458,114 @@ class FinanceOperations:
 
         return total_expenses, total_income, net_savings, savings_transfers
 
+    # ------------------------------
+    # Expense & Income Category Management
+    # ------------------------------
+
+# ----- Expense Category -----
+    @staticmethod
+    def update_expense_category(old_name, new_name):
+        """Update an expense category and reassign all expenses."""
+        conn = sql.connect("data/finance.db")
+        cursor = conn.cursor()
+
+        # Update category table
+        cursor.execute(
+            "UPDATE expense_category SET name = ? WHERE name = ?",
+            (new_name, old_name)
+        )
+
+        # Update existing expenses
+        cursor.execute(
+            "UPDATE expenses SET category = ? WHERE category = ?",
+            (new_name, old_name)
+        )
+
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def reassign_or_delete_expense_category(old_cat, new_cat="Uncategorized"):
+        """Reassign expenses to a new category and delete the old one."""
+        conn = sql.connect("data/finance.db")
+        cursor = conn.cursor()
+
+        # Ensure new category exists
+        cursor.execute("INSERT OR IGNORE INTO expense_category (name) VALUES (?)", (new_cat,))
+
+        # Reassign expenses
+        cursor.execute(
+            "UPDATE expenses SET category = ? WHERE category = ?",
+            (new_cat, old_cat)
+        )
+
+        # Remove old category
+        cursor.execute("DELETE FROM expense_category WHERE name = ?", (old_cat,))
+
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def count_expenses_in_category(category_name):
+        """Return how many expenses use a given category."""
+        conn = sql.connect("data/finance.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM expenses WHERE category = ?",
+                       (category_name,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count
+
+    # ----- Income Category -----
+    @staticmethod
+    def update_income_category(old_name, new_name):
+        """Update an income category and reassign all income records."""
+        conn = sql.connect("data/finance.db")
+        cursor = conn.cursor()
+
+        # Update category table
+        cursor.execute(
+            "UPDATE income_category SET name = ? WHERE name = ?",
+            (new_name, old_name)
+        )
+
+        # Update existing income records
+        cursor.execute(
+            "UPDATE income SET category = ? WHERE category = ?",
+            (new_name, old_name)
+        )
+
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def reassign_or_delete_income_category(old_cat, new_cat="Uncategorized"):
+        """Reassign income records to a new category and delete the old one."""
+        conn = sql.connect("data/finance.db")
+        cursor = conn.cursor()
+
+        # Ensure new category exists
+        cursor.execute("INSERT OR IGNORE INTO income_category (name) VALUES (?)", (new_cat,))
+
+        # Reassign income
+        cursor.execute(
+            "UPDATE income SET category = ? WHERE category = ?",
+            (new_cat, old_cat)
+        )
+
+        # Remove old category
+        cursor.execute("DELETE FROM income_category WHERE name = ?", (old_cat,))
+
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def count_income_in_category(category_name):
+        """Return how many income records use a given category."""
+        conn = sql.connect("data/finance.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM income WHERE category = ?",
+                       (category_name,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count
