@@ -171,9 +171,10 @@ class CategoryReport:
 
                 fig.subplots_adjust(bottom=bottom_margin)
 
-                # Legend labels with category and dollar amount
+                # Legend labels with category, dollar amount, and percentage
+                total_amount = grouped["amount"].sum()
                 labels = [
-                    f"{cat}: ${amt:,.2f}"
+                    f"{cat}: ${amt:,.2f} ({amt / total_amount * 100:.1f}%)"
                     for cat, amt in zip(grouped["category"], grouped["amount"])
                 ]
 

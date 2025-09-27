@@ -1,6 +1,6 @@
 # PROGRAM: Top Categories Report
 # PURPOSE: Display top expense categories ranked by spending with date
-#          filtering and automatic updates.
+#          filtering, automatic updates, and configurable top N categories.
 # INPUT:
 #   - parent (Frame): Parent tkinter frame for rendering content.
 #   - username (str): Logged-in user requesting report.
@@ -10,6 +10,7 @@
 #   - Filter results by selected date range.
 #   - Group by category, rank by total spending, select top N.
 #   - Render horizontal bar chart with USD labels.
+#   - Provide export option for chart as PNG.
 # OUTPUT:
 #   - Interactive horizontal bar chart embedded in tkinter frame.
 # HONOR CODE: On my honor, as an Aggie, I have neither given nor
@@ -21,6 +22,8 @@ import ttkbootstrap as ttk
 from ttkbootstrap.widgets import DateEntry
 import pandas as pd
 from datetime import datetime
+from tkinter import filedialog, messagebox
+import os
 from operations.finance_operations import FinanceOperations
 
 
@@ -57,28 +60,41 @@ class TopCategoriesReport:
         ).pack(pady=10)
 
         # --------------------------------------------------------------
-        # Date pickers
+        # Date pickers + Top N selector
         # --------------------------------------------------------------
-        date_frame = ttk.Frame(self.parent, padding=10)
-        date_frame.pack(fill="x")
+        control_frame = ttk.Frame(self.parent, padding=10)
+        control_frame.pack(fill="x")
 
-        ttk.Label(date_frame, text="Start Date:").grid(
+        ttk.Label(control_frame, text="Start Date:").grid(
             row=0, column=0, sticky="w"
         )
         start_entry = DateEntry(
-            date_frame, bootstyle="info", dateformat="%Y-%m-%d"
+            control_frame, bootstyle="info", dateformat="%Y-%m-%d"
         )
         start_entry.set_date(datetime.today().replace(day=1))
         start_entry.grid(row=0, column=1, padx=5)
 
-        ttk.Label(date_frame, text="End Date:").grid(
+        ttk.Label(control_frame, text="End Date:").grid(
             row=0, column=2, sticky="w"
         )
         end_entry = DateEntry(
-            date_frame, bootstyle="info", dateformat="%Y-%m-%d"
+            control_frame, bootstyle="info", dateformat="%Y-%m-%d"
         )
         end_entry.set_date(datetime.today())
         end_entry.grid(row=0, column=3, padx=5)
+
+        # Top N selector
+        ttk.Label(control_frame, text="Show Top:").grid(
+            row=0, column=4, sticky="w", padx=(15, 0)
+        )
+        topn_combo = ttk.Combobox(
+            control_frame,
+            values=[5, 10, 20],
+            width=5,
+            state="readonly",
+        )
+        topn_combo.set(10)  # default
+        topn_combo.grid(row=0, column=5, padx=5)
 
         # Chart container
         chart_frame = ttk.Frame(self.parent, padding=10)
@@ -94,6 +110,7 @@ class TopCategoriesReport:
 
             start_date = start_entry.get_date()
             end_date = end_entry.get_date()
+            topn = int(topn_combo.get())
 
             # Fetch all expenses
             expenses = self.finance_ops.get_user_expenses(self.username)
@@ -129,34 +146,48 @@ class TopCategoriesReport:
                 ).pack(pady=10)
                 return
 
-            # Group, sort, top 10
+            # Group, sort, top N
             df = df.groupby("category")["amount"].sum().reset_index()
-            df = df.sort_values("amount", ascending=False).head(10)
+            df = df.sort_values("amount", ascending=False).head(topn)
 
             # Dynamic chart sizing
             n = len(df)
             fig, ax = plt.subplots(figsize=(8, max(4, 0.5 * n)))
 
-            bars = ax.barh(df["category"], df["amount"], color="#4a90e2")
+            colors = plt.cm.tab10(range(n))
+            bars = ax.barh(df["category"], df["amount"], color=colors)
 
             ax.set_xlabel("Amount (USD)")
             ax.set_ylabel("Category")
             ax.set_title(
-                f"Top Categories: {start_date:%Y-%m-%d} → {end_date:%Y-%m-%d}"
+                f"Top {topn} Categories: {start_date:%Y-%m-%d} → {end_date:%Y-%m-%d}"
             )
             ax.invert_yaxis()
 
-            # Labels with amounts
+            # Labels with smart placement
+            max_amount = max(df["amount"])
             for bar, amount in zip(bars, df["amount"]):
-                ax.text(
-                    bar.get_width() + (0.01 * max(df["amount"])),
-                    bar.get_y() + bar.get_height() / 2,
-                    f"${amount:,.2f}",
-                    va="center",
-                    ha="left",
-                    fontsize=9,
-                    color="black",
-                )
+                if bar.get_width() > max_amount * 0.2:  # >= 20% of max → inside
+                    ax.text(
+                        bar.get_width() - (0.01 * max_amount),
+                        bar.get_y() + bar.get_height() / 2,
+                        f"${amount:,.2f}",
+                        va="center",
+                        ha="right",
+                        fontsize=9,
+                        color="white",
+                        fontweight="bold"
+                    )
+                else:  # smaller bars → outside
+                    ax.text(
+                        bar.get_width() + (0.01 * max_amount),
+                        bar.get_y() + bar.get_height() / 2,
+                        f"${amount:,.2f}",
+                        va="center",
+                        ha="left",
+                        fontsize=9,
+                        color="black"
+                    )
 
             ax.tick_params(axis="y", labelsize=9)
             fig.tight_layout()
@@ -166,11 +197,36 @@ class TopCategoriesReport:
             canvas.draw()
             canvas.get_tk_widget().pack(pady=10, fill="both", expand=True)
 
+            # Export chart button
+            def export_chart():
+                filepath = filedialog.asksaveasfilename(
+                    defaultextension=".png",
+                    filetypes=[("PNG Image", "*.png")],
+                    title="Save Top Categories Report As",
+                )
+                if filepath:
+                    try:
+                        fig.savefig(filepath, dpi=150, bbox_inches="tight", pad_inches=0.2)
+                        messagebox.showinfo(
+                            "Export Successful",
+                            f"Chart saved to:\n{os.path.abspath(filepath)}"
+                        )
+                    except Exception as error:
+                        messagebox.showerror("Export Failed", str(error))
+
+            ttk.Button(
+                chart_frame,
+                text="Export Chart as PNG",
+                bootstyle="info",
+                command=export_chart,
+            ).pack(pady=5)
+
         # --------------------------------------------------------------
         # Bindings & Load
         # --------------------------------------------------------------
         start_entry.bind("<<DateEntrySelected>>", generate_report)
         end_entry.bind("<<DateEntrySelected>>", generate_report)
+        topn_combo.bind("<<ComboboxSelected>>", generate_report)
 
         # Initial load
         generate_report()
@@ -181,6 +237,6 @@ class TopCategoriesReport:
         ttk.Button(
             self.parent,
             text="Back",
-            bootstyle="danger",
+            bootstyle="secondary",
             command=self.back_callback,
         ).pack(pady=5)
