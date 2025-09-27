@@ -8,7 +8,7 @@
 #   - Retrieve income and expense records from SQLite via FinanceOperations.
 #   - Convert to pandas DataFrames, filter by date range, and group by month.
 #   - Compute net savings (Income - Expenses).
-#   - Render a line chart with matplotlib showing Income, Expenses, and Net.
+#   - Render a line chart or stacked bar chart with matplotlib.
 # OUTPUT:
 #   - Tkinter-embedded chart with value labels and a back navigation button.
 # HONOR CODE: On my honor, as an Aggie, I have neither given nor
@@ -20,11 +20,14 @@ import ttkbootstrap as ttk
 from ttkbootstrap.widgets import DateEntry
 import pandas as pd
 from datetime import datetime
+from tkinter import filedialog, messagebox
+import os
+from matplotlib.ticker import FuncFormatter
 from operations.finance_operations import FinanceOperations
 
 
 class CashFlowReport:
-    """Page to display a cash flow line chart (Income vs Expenses vs Net)."""
+    """Page to display a cash flow chart (Income vs Expenses vs Net)."""
 
     def __init__(self, parent, username, back_callback):
         """
@@ -55,7 +58,7 @@ class CashFlowReport:
         ).pack(pady=10)
 
         # --------------------------------------------------------------
-        # Date Pickers
+        # Date Pickers + Chart Type Selector
         # --------------------------------------------------------------
         date_frame = ttk.Frame(self.parent, padding=10)
         date_frame.pack(fill="x")
@@ -70,6 +73,20 @@ class CashFlowReport:
         end_entry.set_date(datetime.today())  # Default = today
         end_entry.grid(row=0, column=3, padx=5)
 
+        # Chart type selector
+        ttk.Label(date_frame, text="Chart Type:").grid(
+            row=0, column=4, padx=(15, 5), sticky="w"
+        )
+        self.chart_type_combo = ttk.Combobox(
+            date_frame,
+            values=["Line Chart", "Stacked Bar Chart"],
+            state="readonly",
+            width=18,
+        )
+        self.chart_type_combo.set("Line Chart")  # default
+        self.chart_type_combo.grid(row=0, column=5, padx=5)
+
+        # Chart container
         chart_frame = ttk.Frame(self.parent, padding=10)
         chart_frame.pack(fill="both", expand=True)
 
@@ -77,13 +94,14 @@ class CashFlowReport:
         # Chart Generator
         # --------------------------------------------------------------
         def generate_report(*args):
-            """Build and display the cash flow line chart."""
+            """Build and display the cash flow chart (line or stacked bar)."""
             # Clear chart frame
             for widget in chart_frame.winfo_children():
                 widget.destroy()
 
             start_date = start_entry.get_date()
             end_date = end_entry.get_date()
+            chart_type = self.chart_type_combo.get()
 
             # Fetch expenses & income from DB
             expenses = self.finance_ops.get_user_expenses(self.username)
@@ -95,12 +113,10 @@ class CashFlowReport:
 
             # Convert results to DataFrames
             df_exp = pd.DataFrame(
-                expenses,
-                columns=["id", "date", "category", "amount", "description"]
+                expenses, columns=["id", "date", "category", "amount", "description"]
             )
             df_inc = pd.DataFrame(
-                income,
-                columns=["id", "date", "category", "amount", "description"]
+                income, columns=["id", "date", "category", "amount", "description"]
             )
 
             # Normalize dates and extract months
@@ -112,14 +128,12 @@ class CashFlowReport:
             # Filter by date range
             if not df_exp.empty:
                 df_exp = df_exp[
-                    (df_exp["date"] >= start_date) & (
-                                df_exp["date"] <= end_date)
-                    ]
+                    (df_exp["date"] >= start_date) & (df_exp["date"] <= end_date)
+                ]
             if not df_inc.empty:
                 df_inc = df_inc[
-                    (df_inc["date"] >= start_date) & (
-                                df_inc["date"] <= end_date)
-                    ]
+                    (df_inc["date"] >= start_date) & (df_inc["date"] <= end_date)
+                ]
 
             # Group by month
             exp_monthly = (
@@ -132,74 +146,121 @@ class CashFlowReport:
             )
 
             # Merge into single DataFrame
-            df = pd.DataFrame(
-                {"Expenses": exp_monthly, "Income": inc_monthly}).fillna(0)
+            df = pd.DataFrame({"Expenses": exp_monthly, "Income": inc_monthly}).fillna(0)
             df["Net"] = df["Income"] - df["Expenses"]
             df.index = df.index.to_timestamp()
             df = df.sort_index()
 
             if df.empty:
-                ttk.Label(chart_frame, text="No data in this range").pack(
-                    pady=10)
+                ttk.Label(chart_frame, text="No data in this range").pack(pady=10)
                 return
+
+            # Helper for currency formatting
+            def format_currency(value):
+                if abs(value) >= 1_000_000:
+                    return f"${value/1_000_000:.2f}M"
+                elif abs(value) >= 1_000:
+                    return f"${value/1_000:.0f}K"
+                return f"${value:.2f}"
 
             # ----------------------------------------------------------
             # Plot chart
             # ----------------------------------------------------------
-            fig, ax = plt.subplots(figsize=(8, 5))
-            ax.plot(df.index, df["Expenses"], marker="o", color="red",
-                    label="Expenses")
-            ax.plot(df.index, df["Income"], marker="o", color="green",
-                    label="Income")
-            ax.plot(
-                df.index, df["Net"],
-                marker="o", color="blue", linestyle="--", label="Net Savings"
-            )
+            fig, ax = plt.subplots(figsize=(9, 5))
+            ax.set_facecolor("#f9f9f9")
 
-            # Colored dots for Net Savings (green = positive, red = negative)
-            for x, y in zip(df.index, df["Net"]):
-                ax.scatter(x, y, color="green" if y >= 0 else "red", zorder=5)
+            # Format Y-axis as dollars
+            def dollar_formatter(x, pos):
+                if abs(x) >= 1_000_000:
+                    return f"${x/1_000_000:.1f}M"
+                elif abs(x) >= 1_000:
+                    return f"${x/1_000:.0f}K"
+                return f"${x:,.0f}"
 
+            ax.yaxis.set_major_formatter(FuncFormatter(dollar_formatter))
+
+            if chart_type == "Line Chart":
+                # 📈 Line Chart
+                ax.plot(df.index, df["Expenses"], marker="o", markersize=6,
+                        linewidth=2, color="red", label="Expenses")
+                ax.plot(df.index, df["Income"], marker="o", markersize=6,
+                        linewidth=2, color="green", label="Income")
+                ax.plot(df.index, df["Net"], marker="o", markersize=6,
+                        linewidth=2, linestyle="--", color="blue", label="Net Savings")
+
+                # Colored dots for Net
+                for x, y in zip(df.index, df["Net"]):
+                    ax.scatter(x, y, color="green" if y >= 0 else "red", zorder=5)
+
+                # Shaded areas for Net
+                ax.fill_between(df.index, df["Net"], 0,
+                                where=(df["Net"] >= 0),
+                                interpolate=True, color="green", alpha=0.1)
+                ax.fill_between(df.index, df["Net"], 0,
+                                where=(df["Net"] < 0),
+                                interpolate=True, color="red", alpha=0.1)
+
+                # Value labels
+                offset_exp = df["Expenses"].max() * 0.03 if df["Expenses"].max() > 0 else 10
+                offset_inc = df["Income"].max() * 0.03 if df["Income"].max() > 0 else 10
+                offset_net = max(abs(df["Net"].max()), abs(df["Net"].min())) * 0.03
+
+                for x, y in zip(df.index, df["Expenses"]):
+                    ax.text(x, y + offset_exp, format_currency(y),
+                            ha="center", va="bottom", fontsize=8, color="red")
+                for x, y in zip(df.index, df["Income"]):
+                    ax.text(x, y + offset_inc, format_currency(y),
+                            ha="center", va="bottom", fontsize=8, color="green")
+                for x, y in zip(df.index, df["Net"]):
+                    va = "bottom" if y >= 0 else "top"
+                    ax.text(x, y + (offset_net if y >= 0 else -offset_net),
+                            format_currency(y), ha="center", va=va,
+                            fontsize=8, color="green" if y >= 0 else "red",
+                            fontweight="bold")
+
+            else:
+                # 📊 Stacked Bar Chart
+                width = 20  # bar width in days
+                ax.bar(df.index, df["Income"], width=width, color="green", label="Income")
+                ax.bar(df.index, -df["Expenses"], width=width, color="red", label="Expenses")
+
+                # Net as overlay line
+                ax.plot(df.index, df["Net"], marker="o", markersize=6,
+                        linewidth=2, linestyle="--", color="blue", label="Net Savings")
+
+                # Labels for Income
+                for x, y in zip(df.index, df["Income"]):
+                    ax.text(x, y, format_currency(y),
+                            ha="center", va="bottom", fontsize=8, color="green")
+
+                # Labels for Expenses (plotted as negative)
+                for x, y in zip(df.index, df["Expenses"]):
+                    ax.text(x, -y, format_currency(y),
+                            ha="center", va="top", fontsize=8, color="red")
+
+                # Labels for Net Savings
+                offset_net = max(abs(df["Net"].max()), abs(df["Net"].min())) * 0.03
+                for x, y in zip(df.index, df["Net"]):
+                    va = "bottom" if y >= 0 else "top"
+                    ax.text(x, y + (offset_net if y >= 0 else -offset_net),
+                            format_currency(y),
+                            ha="center", va=va, fontsize=9,
+                            color="blue", fontweight="bold")
+
+            # Formatting
+            ax.set_title(f"Cash Flow: {start_date:%b %Y} → {end_date:%b %Y}")
             ax.set_xlabel("Month")
             ax.set_ylabel("Amount (USD)")
-            ax.set_title(
-                f"Cash Flow: {start_date:%Y-%m-%d} → {end_date:%Y-%m-%d}")
             ax.legend()
-            ax.grid(True, linestyle="--", alpha=0.6)
+            ax.grid(True, linestyle="--", alpha=0.7)
 
-            # Rotate x-axis labels vertically
-            plt.setp(ax.get_xticklabels(), rotation=90, ha="center")
+            # Format x-axis
+            ax.set_xticks(df.index)
+            ax.set_xticklabels([d.strftime("%b %Y") for d in df.index], rotation=45, ha="right")
 
-            # ----------------------------------------------------------
-            # Value labels with smart placement
-            # ----------------------------------------------------------
-            offset_exp = df["Expenses"].max() * 0.03 if df[
-                                                            "Expenses"].max() > 0 else 10
-            offset_inc = df["Income"].max() * 0.03 if df[
-                                                          "Income"].max() > 0 else 10
-            offset_net = max(abs(df["Net"].max()), abs(df["Net"].min())) * 0.03
-
-            for x, y in zip(df.index, df["Expenses"]):
-                ax.text(x, y + offset_exp, f"${y:,.2f}", ha="center",
-                        va="bottom",
-                        fontsize=8, color="red")
-
-            for x, y in zip(df.index, df["Income"]):
-                ax.text(x, y + offset_inc, f"${y:,.2f}", ha="center",
-                        va="bottom",
-                        fontsize=8, color="green")
-
-            for x, y in zip(df.index, df["Net"]):
-                va = "bottom" if y >= 0 else "top"
-                ax.text(
-                    x,
-                    y + (offset_net if y >= 0 else -offset_net),
-                    f"${y:,.2f}",
-                    ha="center", va=va,
-                    fontsize=8,
-                    color="green" if y >= 0 else "red",
-                    fontweight="bold"
-                )
+            # Dynamic y padding
+            ymin, ymax = ax.get_ylim()
+            ax.set_ylim(ymin - abs(ymax) * 0.1, ymax + abs(ymax) * 0.1)
 
             fig.tight_layout()
 
@@ -208,9 +269,7 @@ class CashFlowReport:
             canvas.draw()
             canvas.get_tk_widget().pack(pady=10, fill="both", expand=True)
 
-            # ----------------------------------------------------------
             # Export chart button
-            # ----------------------------------------------------------
             def export_chart():
                 filepath = filedialog.asksaveasfilename(
                     defaultextension=".png",
@@ -219,11 +278,10 @@ class CashFlowReport:
                 )
                 if filepath:
                     try:
-                        fig.savefig(filepath, dpi=150, bbox_inches="tight",
-                                    pad_inches=0.2)
+                        fig.savefig(filepath, dpi=150, bbox_inches="tight", pad_inches=0.2)
                         messagebox.showinfo(
                             "Export Successful",
-                            f"Chart saved to:\n{os.path.abspath(filepath)}"
+                            f"Chart saved to:\n{os.path.abspath(filepath)}",
                         )
                     except Exception as error:
                         messagebox.showerror("Export Failed", str(error))
@@ -240,6 +298,9 @@ class CashFlowReport:
         # --------------------------------------------------------------
         start_entry.bind("<<DateEntrySelected>>", generate_report)
         end_entry.bind("<<DateEntrySelected>>", generate_report)
+        self.chart_type_combo.bind("<<ComboboxSelected>>", generate_report)
+
+        # Initial render
         generate_report()
 
         # Back button
