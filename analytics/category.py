@@ -107,47 +107,114 @@ class CategoryReport:
         # Refresh function
         # --------------------------------------------------------------
         def refresh_report(event=None):
-            """Update chart and total spent label based on date range."""
-            start = start_date.entry.get()
-            end = end_date.entry.get()
-            df = reports.get_user_expenses_range(self.username, start, end)
+            """
+            Update the pie chart and total spent label based on the selected date
+            range. Displays expenses by category in a styled pie chart with
+            percentages inside slices and a legend below for details.
+            """
+            start_date_val = start_date.entry.get()
+            end_date_val = end_date.entry.get()
+            expenses_df = reports.get_user_expenses_range(
+                self.username, start_date_val, end_date_val
+            )
 
-            total_spent = df["amount"].sum() if not df.empty else 0
+            total_spent = expenses_df[
+                "amount"].sum() if not expenses_df.empty else 0
             total_label.config(text=f"Total Spent: ${total_spent:,.2f}")
-            total_label.df = df
+            total_label.df = expenses_df
 
-            for w in chart_frame.winfo_children():
-                w.destroy()
+            for widget in chart_frame.winfo_children():
+                widget.destroy()
 
-            if not df.empty:
-                grouped = df.groupby("category")["amount"].sum().reset_index()
-
-                fig, ax = plt.subplots(figsize=(6, 4))
-
-                def autopct_format(pct, allvals):
-                    """Format pie chart labels with percentage and $ amount."""
-                    absolute = int(round(pct / 100.0 * sum(allvals)))
-                    return f"{pct:.1f}%\n(${absolute:,.0f})"
-
-                wedges, _, _ = ax.pie(
-                    grouped["amount"],
-                    labels=grouped["category"],
-                    autopct=lambda pct: autopct_format(pct, grouped["amount"]),
-                    startangle=90
+            if not expenses_df.empty:
+                # ----------------------------------------------------------
+                # Group expenses by category and sort descending
+                # ----------------------------------------------------------
+                grouped = (
+                    expenses_df.groupby("category")["amount"]
+                    .sum()
+                    .reset_index()
+                    .sort_values("amount", ascending=False)
                 )
-                ax.set_title("Expenses by Category")
 
-                # --- Slice click → popup table
-                def on_pick(event):
+                # ----------------------------------------------------------
+                # Create styled pie chart
+                # ----------------------------------------------------------
+                fig, ax = plt.subplots(figsize=(7, 5))
+
+                # Apply darker color palette
+                colors = plt.cm.tab20(range(len(grouped)))
+
+                wedges, texts, autotexts = ax.pie(
+                    grouped["amount"],
+                    startangle=90,
+                    colors=colors,
+                    autopct="%1.1f%%",  # show percentages
+                    pctdistance=0.8  # position text inside slices
+                )
+
+                # Style percentage labels: bold + white text
+                for autotext in autotexts:
+                    autotext.set_color("white")
+                    autotext.set_fontsize(9)
+                    autotext.set_fontweight("bold")
+
+                # ----------------------------------------------------------
+                # Dynamic legend layout
+                # ----------------------------------------------------------
+                if len(grouped) > 10:
+                    ncol = 3
+                    bottom_margin = 0.35
+                else:
+                    ncol = 2
+                    bottom_margin = 0.25
+
+                fig.subplots_adjust(bottom=bottom_margin)
+
+                # Legend labels with category and dollar amount
+                labels = [
+                    f"{cat}: ${amt:,.2f}"
+                    for cat, amt in zip(grouped["category"], grouped["amount"])
+                ]
+
+                ax.legend(
+                    wedges,
+                    labels,
+                    title="Categories",
+                    loc="upper center",
+                    bbox_to_anchor=(0.5, -0.15),
+                    ncol=ncol,
+                    frameon=True,
+                    fancybox=True,
+                    shadow=False,
+                    fontsize=8,
+                    title_fontsize=10,
+                    labelspacing=0.3,
+                    borderaxespad=0.0,
+                )
+
+                ax.set_title(
+                    "Expenses by Category",
+                    fontsize=12,
+                    fontweight="bold",
+                    pad=20
+                )
+
+                # ----------------------------------------------------------
+                # Handle slice click → open popup table
+                # ----------------------------------------------------------
+                def on_pick(event_pick):
                     for i, wedge in enumerate(wedges):
-                        if event.artist == wedge:
-                            category = grouped.iloc[i]["category"]
-                            cat_df = df[df["category"] == category]
+                        if event_pick.artist == wedge:
+                            category_val = grouped.iloc[i]["category"]
+                            category_df = expenses_df[
+                                expenses_df["category"] == category_val
+                                ]
                             build_table_popup(
                                 self.parent,
-                                f"Expenses for {category}",
-                                cat_df,
-                                export_name=f"{category}_expenses"
+                                f"Expenses for {category_val}",
+                                category_df,
+                                export_name=f"{category_val}_expenses",
                             )
                             break
 
@@ -156,38 +223,51 @@ class CategoryReport:
 
                 fig.canvas.mpl_connect("pick_event", on_pick)
 
-                # Embed chart
+                # ----------------------------------------------------------
+                # Embed chart in the Tkinter frame
+                # ----------------------------------------------------------
                 canvas = FigureCanvasTkAgg(fig, master=chart_frame)
                 canvas.draw()
                 canvas.get_tk_widget().pack(fill="both", expand=True)
 
-                # --- Export Chart Button
+                # ----------------------------------------------------------
+                # Export chart button
+                # ----------------------------------------------------------
                 def export_chart():
                     filepath = filedialog.asksaveasfilename(
                         defaultextension=".png",
                         filetypes=[("PNG Image", "*.png")],
-                        title="Save Category Report As"
+                        title="Save Category Report As",
                     )
                     if filepath:
                         try:
-                            fig.savefig(filepath, dpi=150)
+                            fig.savefig(
+                                filepath,
+                                dpi=150,
+                                bbox_inches="tight",
+                                pad_inches=0.2
+                            )
                             messagebox.showinfo(
                                 "Export Successful",
-                                f"Chart saved to:\n{os.path.abspath(filepath)}"
+                                f"Chart saved to:\n{os.path.abspath(filepath)}",
                             )
-                        except Exception as e:
-                            messagebox.showerror("Export Failed", str(e))
+                        except Exception as error:
+                            messagebox.showerror("Export Failed", str(error))
 
                 ttk.Button(
-                    chart_frame, text="Export Chart as PNG",
-                    bootstyle="info", command=export_chart
-                ).pack(pady=10)
+                    chart_frame,
+                    text="Export Chart as PNG",
+                    bootstyle="info",
+                    command=export_chart,
+                ).pack(pady=5)
 
                 ttk.Button(
-                    chart_frame, text="Back",
-                    bootstyle="secondary", width=20,
-                    command=self.back_callback
-                ).pack(pady=10)
+                    chart_frame,
+                    text="Back",
+                    bootstyle="secondary",
+                    width=20,
+                    command=self.back_callback,
+                ).pack(pady=5)
 
         # --------------------------------------------------------------
         # Event bindings
