@@ -95,10 +95,12 @@ class CashFlowReport:
 
             # Convert results to DataFrames
             df_exp = pd.DataFrame(
-                expenses, columns=["id", "date", "category", "amount", "description"]
+                expenses,
+                columns=["id", "date", "category", "amount", "description"]
             )
             df_inc = pd.DataFrame(
-                income, columns=["id", "date", "category", "amount", "description"]
+                income,
+                columns=["id", "date", "category", "amount", "description"]
             )
 
             # Normalize dates and extract months
@@ -110,12 +112,14 @@ class CashFlowReport:
             # Filter by date range
             if not df_exp.empty:
                 df_exp = df_exp[
-                    (df_exp["date"] >= start_date) & (df_exp["date"] <= end_date)
-                ]
+                    (df_exp["date"] >= start_date) & (
+                                df_exp["date"] <= end_date)
+                    ]
             if not df_inc.empty:
                 df_inc = df_inc[
-                    (df_inc["date"] >= start_date) & (df_inc["date"] <= end_date)
-                ]
+                    (df_inc["date"] >= start_date) & (
+                                df_inc["date"] <= end_date)
+                    ]
 
             # Group by month
             exp_monthly = (
@@ -128,21 +132,25 @@ class CashFlowReport:
             )
 
             # Merge into single DataFrame
-            df = pd.DataFrame({"Expenses": exp_monthly, "Income": inc_monthly}).fillna(0)
+            df = pd.DataFrame(
+                {"Expenses": exp_monthly, "Income": inc_monthly}).fillna(0)
             df["Net"] = df["Income"] - df["Expenses"]
             df.index = df.index.to_timestamp()
             df = df.sort_index()
 
             if df.empty:
-                ttk.Label(chart_frame, text="No data in this range").pack(pady=10)
+                ttk.Label(chart_frame, text="No data in this range").pack(
+                    pady=10)
                 return
 
             # ----------------------------------------------------------
             # Plot chart
             # ----------------------------------------------------------
             fig, ax = plt.subplots(figsize=(8, 5))
-            ax.plot(df.index, df["Expenses"], marker="o", color="red", label="Expenses")
-            ax.plot(df.index, df["Income"], marker="o", color="green", label="Income")
+            ax.plot(df.index, df["Expenses"], marker="o", color="red",
+                    label="Expenses")
+            ax.plot(df.index, df["Income"], marker="o", color="green",
+                    label="Income")
             ax.plot(
                 df.index, df["Net"],
                 marker="o", color="blue", linestyle="--", label="Net Savings"
@@ -154,27 +162,43 @@ class CashFlowReport:
 
             ax.set_xlabel("Month")
             ax.set_ylabel("Amount (USD)")
-            ax.set_title(f"Cash Flow: {start_date:%Y-%m-%d} → {end_date:%Y-%m-%d}")
+            ax.set_title(
+                f"Cash Flow: {start_date:%Y-%m-%d} → {end_date:%Y-%m-%d}")
             ax.legend()
             ax.grid(True, linestyle="--", alpha=0.6)
 
             # Rotate x-axis labels vertically
             plt.setp(ax.get_xticklabels(), rotation=90, ha="center")
 
-            # Value labels above points
+            # ----------------------------------------------------------
+            # Value labels with smart placement
+            # ----------------------------------------------------------
+            offset_exp = df["Expenses"].max() * 0.03 if df[
+                                                            "Expenses"].max() > 0 else 10
+            offset_inc = df["Income"].max() * 0.03 if df[
+                                                          "Income"].max() > 0 else 10
+            offset_net = max(abs(df["Net"].max()), abs(df["Net"].min())) * 0.03
+
             for x, y in zip(df.index, df["Expenses"]):
-                ax.text(x, y + (0.01 * df["Expenses"].max()), f"${y:,.2f}",
-                        ha="center", va="bottom", fontsize=8, color="red")
+                ax.text(x, y + offset_exp, f"${y:,.2f}", ha="center",
+                        va="bottom",
+                        fontsize=8, color="red")
+
             for x, y in zip(df.index, df["Income"]):
-                ax.text(x, y + (0.01 * df["Income"].max()), f"${y:,.2f}",
-                        ha="center", va="bottom", fontsize=8, color="green")
+                ax.text(x, y + offset_inc, f"${y:,.2f}", ha="center",
+                        va="bottom",
+                        fontsize=8, color="green")
+
             for x, y in zip(df.index, df["Net"]):
+                va = "bottom" if y >= 0 else "top"
                 ax.text(
                     x,
-                    y + (0.01 * max(abs(df["Net"].max()), abs(df["Net"].min()))),
+                    y + (offset_net if y >= 0 else -offset_net),
                     f"${y:,.2f}",
-                    ha="center", va="bottom", fontsize=8,
+                    ha="center", va=va,
+                    fontsize=8,
                     color="green" if y >= 0 else "red",
+                    fontweight="bold"
                 )
 
             fig.tight_layout()
@@ -183,6 +207,33 @@ class CashFlowReport:
             canvas = FigureCanvasTkAgg(fig, master=chart_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=10, fill="both", expand=True)
+
+            # ----------------------------------------------------------
+            # Export chart button
+            # ----------------------------------------------------------
+            def export_chart():
+                filepath = filedialog.asksaveasfilename(
+                    defaultextension=".png",
+                    filetypes=[("PNG Image", "*.png")],
+                    title="Save Cash Flow Report As",
+                )
+                if filepath:
+                    try:
+                        fig.savefig(filepath, dpi=150, bbox_inches="tight",
+                                    pad_inches=0.2)
+                        messagebox.showinfo(
+                            "Export Successful",
+                            f"Chart saved to:\n{os.path.abspath(filepath)}"
+                        )
+                    except Exception as error:
+                        messagebox.showerror("Export Failed", str(error))
+
+            ttk.Button(
+                chart_frame,
+                text="Export Chart as PNG",
+                bootstyle="info",
+                command=export_chart,
+            ).pack(pady=5)
 
         # --------------------------------------------------------------
         # Bind events & render on load
