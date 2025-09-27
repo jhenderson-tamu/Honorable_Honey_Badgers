@@ -216,29 +216,57 @@ def register_user(username: str, password: str) -> str:
 
 def authenticate_user(username: str, password: str) -> tuple[bool, str]:
     """
-    Verify user login credentials.
+    Verify user login credentials against the database.
+
+    This function checks if the provided username exists in the users table
+    and validates the given plaintext password against the stored bcrypt hash.
 
     Args:
-        username (str): Username.
-        password (str): Plaintext password.
+        username (str): The username to authenticate.
+        password (str): The plaintext password provided by the user.
 
     Returns:
-        tuple: (success, message)
-            - success (bool): True if authentication succeeds.
-            - message (str): Feedback message.
+        tuple[bool, str]:
+            - success (bool): True if authentication succeeds, False otherwise.
+            - message (str): Feedback message describing the result.
+                * "Error! All fields are required!" → Missing input
+                * "User not found" → Username does not exist
+                * "Incorrect password" → Username exists but password is wrong
+                * "Login successful!" → Authentication passed
+                * "Database error: ..." → Unexpected DB issues
     """
+    # --- Input validation ---
     if not username or not password:
         return False, "Error! All fields are required!"
 
-    conn = sql.connect("data/users.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
-    result = cursor.fetchone()
-    conn.close()
+    try:
+        # --- Connect to the database ---
+        conn = sql.connect("data/users.db")
+        cursor = conn.cursor()
 
-    if result and bc.checkpw(password.encode("utf-8"), result[0]):
-        return True, "Login successful!"
-    return False, "Invalid username or password!"
+        # Query for stored hashed password of the given username
+        cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+        result = cursor.fetchone()
+
+        # Always close the connection after use
+        conn.close()
+    except Exception as e:
+        # Catch any DB errors (e.g., missing file, locked DB, schema issue)
+        return False, f"Database error: {e}"
+
+    # --- Evaluate query result ---
+    if not result:
+        # No such username found in the database
+        return False, "User not found, please register user"
+
+    stored_hash = result[0]  # Extract stored bcrypt hash
+
+    # Compare plaintext password with stored bcrypt hash
+    if not bc.checkpw(password.encode("utf-8"), stored_hash):
+        return False, "Incorrect password, please re-enter password."
+
+    # All checks passed → authentication succeeds
+    return True, "Login successful!"
 
 
 def change_user_password(username: str,

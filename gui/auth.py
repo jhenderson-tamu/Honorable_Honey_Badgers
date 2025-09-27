@@ -82,13 +82,6 @@ class AuthWindow:
         frame = ttk.Frame(self.login, padding=20)
         frame.pack(fill="both", expand=YES)
 
-        # Message label for inline feedback
-        self.message_label = ttk.Label(
-            self.login, text="", font=("Helvetica", 12),
-            foreground="red"
-        )
-        self.message_label.pack(pady=5)
-
         # Username
         ttk.Label(frame, text="Username:", font=("Helvetica", 12)).pack(
             anchor="w", pady=5
@@ -115,6 +108,13 @@ class AuthWindow:
             frame, text="Register", bootstyle="info",
             command=self._show_register_page
         ).pack(pady=10)
+
+        # --- Message label BELOW the buttons ---
+        self.message_label = ttk.Label(
+            frame, text="", font=("Helvetica", 12),
+            foreground="red"
+        )
+        self.message_label.pack(pady=5)
 
         # Bind Enter key
         self.login.bind("<Return>", lambda event: self.login_user())
@@ -165,9 +165,9 @@ class AuthWindow:
         self.password_entry.pack(fill="x", pady=5)
 
         # Confirm password
-        ttk.Label(
-            frame, text="Confirm Password:", font=("Helvetica", 12)
-        ).pack(anchor="w", pady=5)
+        ttk.Label(frame, text="Confirm Password:", font=("Helvetica", 12)).pack(
+            anchor="w", pady=5
+        )
         self.confirm_var = ttk.StringVar()
         self.confirm_entry = ttk.Entry(
             frame, bootstyle="primary", show="*",
@@ -189,13 +189,15 @@ class AuthWindow:
                 rules_frame, text="At least 8 characters", foreground="red"
             ),
             "uppercase": ttk.Label(
-                rules_frame, text="At least 1 uppercase letter", foreground="red"
+                rules_frame, text="At least 1 uppercase letter",
+                foreground="red"
             ),
             "number": ttk.Label(
                 rules_frame, text="At least 1 number", foreground="red"
             ),
             "special": ttk.Label(
-                rules_frame, text="At least 1 special character", foreground="red"
+                rules_frame, text="At least 1 special character",
+                foreground="red"
             ),
             "no_space": ttk.Label(
                 rules_frame, text="No spaces", foreground="red"
@@ -214,10 +216,18 @@ class AuthWindow:
         )
         self.register_button.pack(pady=20)
 
+        # Back button
         ttk.Button(
             frame, text="Back to Login", bootstyle="danger",
             command=self.setup_ui
         ).pack(pady=10)
+
+        # --- Message label BELOW the buttons ---
+        self.message_label = ttk.Label(
+            frame, text="", font=("Helvetica", 12),
+            foreground="red"
+        )
+        self.message_label.pack(pady=5)
 
         # Track password and confirm changes
         self.password_var.trace_add(
@@ -266,12 +276,7 @@ class AuthWindow:
             self.close_login()
             self.main_app_callback(username)
         else:
-            if "username" in message.lower():
-                self._show_message(
-                    "User not found. Please register.", "red"
-                )
-            else:
-                self._show_message(message, "red")
+            self._show_message(message, "red")
             self.password_entry.delete(0, "end")
 
     # ------------------------------------------------------------------
