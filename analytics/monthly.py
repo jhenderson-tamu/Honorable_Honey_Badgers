@@ -2,7 +2,7 @@
 # PURPOSE: Display monthly expenses over time as a bar chart with the
 #          ability to drill into details and export results.
 # INPUT:
-#   - parent (Frame): Parent tkinter frame for rendering.
+#   - parent (Frame): Parent Tkinter frame for rendering.
 #   - username (str): Logged-in user requesting the report.
 #   - back_callback (function): Callback to return to previous page.
 # PROCESS:
@@ -12,86 +12,71 @@
 #   - Render bar chart with clickable bars to show detail tables.
 #   - Provide CSV and PNG export options.
 # OUTPUT:
-#   - Interactive monthly expenses chart with detail popups and export
-#     functionality.
+#   - Interactive monthly expenses chart with detail popups and export.
 # HONOR CODE: On my honor, as an Aggie, I have neither given nor
 #             received unauthorized aid on this academic work.
 
+import os
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import StrMethodFormatter
 import ttkbootstrap as ttk
-import pandas as pd
 from ttkbootstrap.widgets import DateEntry
-from operations import reports
-from .helpers import build_table_popup
 from tkinter import filedialog, messagebox
-import os
+from operations import reports
+from analytics.helpers import build_table_popup, make_action_buttons
 
 
 class MonthlyReport:
     """Page to display monthly expenses in bar chart format."""
 
     def __init__(self, parent, username, back_callback):
-        """
-        Initialize MonthlyReport.
-
-        Args:
-            parent (Frame): Parent tkinter frame.
-            username (str): Logged-in username.
-            back_callback (function): Function to return to previous page.
-        """
+        """Initialize MonthlyReport."""
         self.parent = parent
         self.username = username
         self.back_callback = back_callback
+        self._fig = None  # store latest figure for export
 
-    # ------------------------------------------------------------------
-    # Public
-    # ------------------------------------------------------------------
     def show(self):
-        """Render the monthly expenses report page."""
-        # Clear frame
-        for w in self.parent.winfo_children():
-            w.destroy()
+        """Render the Monthly Expenses report page."""
+        for widget in self.parent.winfo_children():
+            widget.destroy()
 
+        # Main frame
         frame = ttk.Frame(self.parent)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
 
         # --------------------------------------------------------------
-        # Default date range = last month with data (or current month)
+        # Determine default date range
         # --------------------------------------------------------------
         all_expenses = reports.get_user_expenses_range(
             self.username, "1900-01-01", "2999-12-31"
         )
-
         if not all_expenses.empty:
             last_date = all_expenses["date"].max().date()
             first_day = last_date.replace(day=1)
-            next_month = (
-                last_date.replace(day=28) + pd.Timedelta(days=4)
-            ).replace(day=1)
+            next_month = (last_date.replace(day=28) +
+                          pd.Timedelta(days=4)).replace(day=1)
             last_day = next_month - pd.Timedelta(days=1)
         else:
             today = pd.Timestamp.today().date()
             first_day = today.replace(day=1)
-            next_month = (
-                today.replace(day=28) + pd.Timedelta(days=4)
-            ).replace(day=1)
+            next_month = (today.replace(day=28) +
+                          pd.Timedelta(days=4)).replace(day=1)
             last_day = next_month - pd.Timedelta(days=1)
-
-        min_date, max_date = first_day, last_day
 
         # --------------------------------------------------------------
         # Date pickers
         # --------------------------------------------------------------
         ttk.Label(frame, text="Start Date:").grid(row=0, column=0, padx=5, pady=5)
         start_date = DateEntry(frame, bootstyle="primary", dateformat="%Y-%m-%d")
-        start_date.set_date(min_date)
+        start_date.set_date(first_day)
         start_date.grid(row=0, column=1, padx=5, pady=5)
 
         ttk.Label(frame, text="End Date:").grid(row=0, column=2, padx=5, pady=5)
         end_date = DateEntry(frame, bootstyle="primary", dateformat="%Y-%m-%d")
-        end_date.set_date(max_date)
+        end_date.set_date(last_day)
         end_date.grid(row=0, column=3, padx=5, pady=5)
 
         # --------------------------------------------------------------
@@ -105,120 +90,114 @@ class MonthlyReport:
         )
         total_label.grid(row=1, column=0, columnspan=4, pady=10)
 
+        # --------------------------------------------------------------
         # Chart container
+        # --------------------------------------------------------------
         chart_frame = ttk.Frame(frame)
-        chart_frame.grid(row=2, column=0, columnspan=5, pady=20)
+        chart_frame.grid(row=2, column=0, columnspan=5, pady=20, sticky="nsew")
+        frame.grid_rowconfigure(2, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
 
         # --------------------------------------------------------------
-        # Handlers
+        # Chart refresh function
         # --------------------------------------------------------------
-        def show_month_details(month_period, month_df):
-            """Open popup with details for a specific month."""
-            build_table_popup(
-                self.parent,
-                f"Expenses for {month_period}",
-                month_df,
-                export_name=f"{month_period}_expenses",
-            )
-
-        def show_all_details(event=None):
-            """Open popup with all expenses in the current report."""
-            df = getattr(total_label, "df", pd.DataFrame())
-            build_table_popup(
-                self.parent, "All Expenses", df, export_name="expenses"
-            )
-
         def refresh_report(event=None):
-            """Reload chart and labels when date range changes."""
-            start = start_date.entry.get()
-            end = end_date.entry.get()
-            df = reports.get_user_expenses_range(self.username, start, end)
+            for widget in chart_frame.winfo_children():
+                widget.destroy()
 
-            # Update total spent
+            df = reports.get_user_expenses_range(
+                self.username,
+                start_date.entry.get(),
+                end_date.entry.get(),
+            )
+
             total_spent = df["amount"].sum() if not df.empty else 0
             total_label.config(text=f"Total Spent: ${total_spent:,.2f}")
             total_label.df = df
 
-            # Clear previous chart
-            for w in chart_frame.winfo_children():
-                w.destroy()
+            if df.empty:
+                return
 
-            if not df.empty:
-                # Group by month
-                monthly = df.groupby(df["date"].dt.to_period("M"))[
-                    "amount"
-                ].sum()
+            monthly = df.groupby(df["date"].dt.to_period("M"))["amount"].sum()
 
-                fig, ax = plt.subplots(figsize=(6, 4))
-                bar_container = ax.bar(
-                    monthly.index.astype(str),
-                    monthly.values,
-                    picker=True,
-                )
-                ax.set_title("Monthly Expenses")
-                ax.set_ylabel("Amount ($)")
-                fig.tight_layout()
+            fig, ax = plt.subplots(figsize=(6, 4))
+            bars = ax.bar(monthly.index.astype(str), monthly.values, picker=True)
 
-                # Format y-axis as USD
-                ax.yaxis.set_major_formatter(StrMethodFormatter("${x:,.2f}"))
+            ax.set_title("Monthly Expenses")
+            ax.set_ylabel("Amount ($)")
+            ax.yaxis.set_major_formatter(StrMethodFormatter("${x:,.2f}"))
+            fig.tight_layout()
 
-                # Embed chart in tkinter
-                canvas = FigureCanvasTkAgg(fig, master=chart_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill="both", expand=True)
+            self._fig = fig
 
-                # Click bar to see details
-                def on_pick(event):
-                    if (
-                        isinstance(event.artist, plt.Rectangle)
-                        and event.artist in bar_container
-                    ):
-                        bar_index = bar_container.index(event.artist)
-                        month_period = monthly.index[bar_index]
-                        month_df = df[
-                            df["date"].dt.to_period("M") == month_period
-                        ]
-                        show_month_details(month_period, month_df)
+            canvas = FigureCanvasTkAgg(fig, master=chart_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill="both", expand=True)
 
-                fig.canvas.mpl_connect("pick_event", on_pick)
+            # Drill-down on bar click
+            def on_pick(event_pick):
+                if (getattr(event_pick, "mouseevent", None) is None or
+                        event_pick.mouseevent.button != 1):
+                    return
+                if isinstance(event_pick.artist, plt.Rectangle):
+                    try:
+                        idx = bars.index(event_pick.artist)
+                        month_period = monthly.index[idx]
+                        month_df = df[df["date"].dt.to_period("M") == month_period]
+                        build_table_popup(
+                            self.parent,
+                            f"Expenses for {month_period}",
+                            month_df,
+                            export_name=f"{month_period}_expenses",
+                        )
+                    except ValueError:
+                        pass
 
-                # Export chart button
-                def export_chart():
-                    filepath = filedialog.asksaveasfilename(
-                        defaultextension=".png",
-                        filetypes=[("PNG Image", "*.png")],
-                        title="Save Monthly Report As",
-                    )
-                    if filepath:
-                        try:
-                            fig.savefig(filepath, dpi=150)
-                            messagebox.showinfo(
-                                "Export Successful",
-                                f"Chart saved to:\n{os.path.abspath(filepath)}",
-                            )
-                        except Exception as e:
-                            messagebox.showerror("Export Failed", str(e))
-
-                ttk.Button(
-                    chart_frame,
-                    text="Export Chart as PNG",
-                    bootstyle="info",
-                    command=export_chart,
-                ).pack(pady=10)
-
-                ttk.Button(
-                    frame,
-                    text="Back",
-                    bootstyle="secondary",
-                    width=20,
-                    command=self.back_callback,
-                ).grid(row=3, column=0, columnspan=5, pady=10)
+            fig.canvas.mpl_connect("pick_event", on_pick)
 
         # --------------------------------------------------------------
-        # Bindings and initial load
+        # Export function
+        # --------------------------------------------------------------
+        def export_chart():
+            if not self._fig:
+                return
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=[("PNG Image", "*.png")],
+                title="Save Monthly Report As",
+            )
+            if filepath:
+                self._fig.savefig(filepath, dpi=150, bbox_inches="tight", pad_inches=0.2)
+                messagebox.showinfo(
+                    "Export Successful",
+                    f"Chart saved to:\n{os.path.abspath(filepath)}",
+                )
+
+        # --------------------------------------------------------------
+        # Buttons (added once, not duplicated on refresh)
+        # --------------------------------------------------------------
+        make_action_buttons(
+            self.parent,
+            [
+                ("Export Chart as PNG", export_chart, "info"),
+                ("Back", self.back_callback, "danger"),
+            ],
+            width=25,
+            use_grid=False,
+        )
+
+        # --------------------------------------------------------------
+        # Bindings and initial render
         # --------------------------------------------------------------
         start_date.bind("<<DateEntrySelected>>", refresh_report)
         end_date.bind("<<DateEntrySelected>>", refresh_report)
-        total_label.bind("<Button-1>", show_all_details)
+        total_label.bind(
+            "<Button-1>",
+            lambda e: build_table_popup(
+                self.parent,
+                "All Expenses",
+                getattr(total_label, "df", pd.DataFrame()),
+            ),
+        )
 
         refresh_report()
