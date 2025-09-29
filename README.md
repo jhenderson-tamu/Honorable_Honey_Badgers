@@ -15,7 +15,6 @@ The application is built using **ttkbootstrap** for a modern Tkinter GUI,
 
 > **Recommended Python Version:** 3.10+ (tested on 3.11)
 
-
 ## Features
 - **User Authentication**
   - Secure login and registration with password hashing (`bcrypt`)
