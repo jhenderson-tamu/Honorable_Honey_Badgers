@@ -1,27 +1,40 @@
-# Personal Finance Application - Modular Version
+# ================================
+# Honorable Honey Badgers
+# Personal Finance Application
+# README File
+# ================================
 
-A comprehensive personal finance management application built with
-Python and ttkbootstrap GUI framework.\
-This modular version breaks down the original monolithic code into
-organized, maintainable modules.
+## Overview
+The **Honorable Honey Badgers Personal Finance Application** is a modular
+Python-based desktop tool for managing personal finances. It allows users
+to register securely, track income and expenses, and generate interactive
+reports with charts and drill-down detail.
+
+The application is built using **ttkbootstrap** for a modern Tkinter GUI,
+**pandas** for data management, and **matplotlib** for analytics and charting.
 
 > **Recommended Python Version:** 3.10+ (tested on 3.11)
 
-## Features
 
--   **User Authentication**: Secure user registration and login with
-    password hashing\
--   **Expense Management**: Add, view, edit, and delete expenses with
-    categories\
--   **Income Tracking**: Manage income sources with categorization\
--   **Budget Overview**: Calculate budget summaries for custom date
-    ranges\
--   **Analytics**: Interactive charts for understanding expense and
-    income trends\
--   **CSV Import/Export**: Import financial data from CSV files\
--   **Account Management**: Change passwords and view login history\
--   **Multi-user Support**: Each user has their own isolated financial
-    data
+## Features
+- **User Authentication**
+  - Secure login and registration with password hashing (`bcrypt`)
+  - Multi-user support with isolated financial data
+
+- **Expense & Income Management**
+  - Add, view, edit, and delete records
+  - Categorize and filter by type and date range
+  - Import/export financial data via CSV
+
+- **Analytics Dashboard**
+  - **Monthly Report** – Bar chart of monthly expenses with drill-down to details
+  - **Category Report** – Pie chart of spending by category
+  - **Top Categories Report** – Ranked horizontal bar chart of highest spending
+  - **Cash Flow Report** – Line/stacked bar chart showing Income, Expenses, and Net Savings
+  - Export all charts as PNG and tabular data as CSV
+
+- **Account Management**
+  - Change passwords, manage login history, and enforce password rules
 
 ## Project Structure
 
@@ -69,7 +82,18 @@ Honorable_Honey_Badgers/
 
 1.  **Clone or download the project files**
 
-2.  **Install required dependencies:**
+   ```bash
+   git clone https://github.com/jhenderson-tamu/Honorable_Honey_Badgers.git
+   cd Honorable_Honey_Badgers
+   ```
+2. **Create and activate a virtual environment**
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate   # On Windows use: .venv\Scripts\activate
+   ```
+   
+3. **Install required dependencies:**
 
     ``` bash
     pip install -r requirements.txt
@@ -208,7 +232,8 @@ Both **expense** and **income** CSV files must include:\
 
 ## Security Features
 
--   Passwords hashed with bcrypt\
+-   User passwords are hashed using bcrypt before storage
+-   No plaintext credentials are saved in the database  
 -   Isolated user data\
 -   Session-based authentication
 
