@@ -51,7 +51,7 @@ Honorable_Honey_Badgers/
 ├── Docs/                       # Documentation
 │   ├── ISTM 601 - Group 8 Python (Group Contract) - Phase 1.pdf
 │   ├── ISTM 601 - Group 8 User Manual - Phase 2.pdf
-│   └── ISTM 601 - Group 8 Technical Manual - Phase 2.pdf
+│   ├── ISTM 601 - Group 8 Technical Manual - Phase 2.pdf
 │   ├── ISTM 601 - Group 8 User Manual - Phase 3.pdf
 │   └── ISTM 601 - Group 8 Technical Manual - Phase 3.pdf
 │
